@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Scientific Research & Experimental Development</title>
+        <link rel="stylesheet" href="styles/base.css">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    </head>
+    <body>
+        <header class="header">
+		<div class="top-ctn">
+			<div class="top-content">
+				<div class="brand"> <img src="https://www.canada.ca/etc/designs/canada/wet-boew/assets/sig-blk-en.svg" alt="Government of Canada"> </div> <a href="#" class="language-switch">Français</a> </div>
+		</div>
+		<div class="bottom-ctn">
+			<div class="bottom-content">
+				<div class="left-content">
+				Canada Revenue Agency<br>
+				My Business Account
+				</div>
+				<div class="right-content">
+					<div>
+						<span class="material-icons biz-icon">business_center</span>
+					</div>
+					<div class="account-info">
+					<span id="task-account-name"></span>
+					<span id="task-account-bn9"></span>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+	</header>
+        <div class="confirmation-wrapper">
+            <div class="small-h1">Scientific Research & Experimental Development (SR&ED)</div>
+
+            <h1>Pre-claim approval (PCA) - project confirmation </h1>
+            This project has been marked as complete in the PCA project list.   
+
+            <h6>Next steps</h6>
+            If you have another project to add, edit, or complete, go to the PCA project list        
+            <br><button class="btn btn-secondary ml-16px" type="button">Go to PCA project list</button>
+            <h6>Are you ready to submit? </h6>            
+            If you are ready to submit this PCA, go to the PCA overview page<br>
+            <button class="btn btn-primary ml16px" type="button">Go to PCA overview</button>
+        </div>
+    </body>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let taskData = sessionStorage.getItem("selectedTask");
+            console.log(taskData)
+
+            if (!taskData) {
+                // If user somehow lands here without choosing a task, redirect them back
+                window.location.href = "chooser.html";
+            } else {
+                taskData = JSON.parse(taskData);
+                console.log("Loaded Task Data:", taskData);
+
+
+                if (taskData.racUserName) {
+                    document.getElementById("task-rep-name").textContent = taskData.racUserName;   
+                }
+                else {
+                    document.getElementById("task-rep-name").textContent = "REPRESENTATIVE NAME";
+                }
+
+                if (taskData.deceasedInfo && taskData.deceasedInfo.name) {
+                    document.getElementById("task-accountuser-name").textContent = taskData.deceasedInfo.name;
+                }
+            }
+        });
+        function returnToOverview (){
+            window.location.href = "chooser.html";
+            sessionStorage.clear();
+        }
+
+        </script>
+        
+
+</html>
+

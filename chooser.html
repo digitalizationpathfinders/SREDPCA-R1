@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Task</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Select a Task</h2>
+    <button onclick="chooseTask(1)">Task 1</button>
+    <button onclick="chooseTask(2)">Task 2</button>
+    <button onclick="chooseTask(3)">Task 3</button>
+    <button onclick="chooseTask(4)">Task 4</button>
+    <button onclick="chooseTask(5)">Task 5</button>
+
+
+    <script>
+        function chooseTask(taskNumber) {
+            const tasks = {
+
+                1: {
+                    accountInfo: {
+                        businessNumber: "123456789 RC 001",
+                        businessName: "Nick's Hat Shop",
+                        telNumber: "613-123-4567",
+                    },
+                        bn9: "123456789",
+                        account: "RC001",
+                        
+                    
+                },
+                2: {
+                      result: "factual"
+                },
+                3: {
+                    result: "deeemednonres"
+                },
+                4: {
+                    result: "res"
+                },
+                5: {
+                    result: "nonres"
+                }
+            };
+
+            // Store the selected task's data in sessionStorage
+            sessionStorage.setItem("selectedTask", JSON.stringify(tasks[taskNumber]));
+            sessionStorage.setItem("taskNum", taskNumber);
+
+            // Redirect to main index page
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
+
+                 
+        
+    </script>
+</body>
+</html>

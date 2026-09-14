@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Scientific Research & Experimental Development</title>
+	<link rel="stylesheet" href="styles/base.css">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> </head>
+
+<body>
+	<header class="header">
+		<div class="top-ctn">
+			<div class="top-content">
+				<div class="brand"> <img src="https://www.canada.ca/etc/designs/canada/wet-boew/assets/sig-blk-en.svg" alt="Government of Canada"> </div> <a href="#" class="language-switch">Français</a> </div>
+		</div>
+		<div class="bottom-ctn">
+			<div class="bottom-content">
+				<div class="left-content">
+				Canada Revenue Agency<br>
+				My Business Account
+				</div>
+				<div class="right-content">
+					<div>
+						<span class="material-icons biz-icon">business_center</span>
+					</div>
+					<div class="account-info">
+					<span id="task-account-name"></span>
+					<span id="task-account-bn9"></span>
+					</div>
+					
+				</div>
+			</div>
+		</div>
+	</header>
+	<div class="page-container">
+		
+		<div class="heading">
+			<div class="small-h1">Scientific Research & Experimental Development (SR&ED)</div>
+			<h1>Pre-claim approval (PCA) - add a project</h1>
+
+		</div>
+		<main class="stepper">
+			<section class="step" id="step-0">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Before you begin</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<p>Use this web form to provide information about your planned Scientific Research & Experimental Development (SR&ED) project. You must fill out a separate form for each of your projects. </p>
+						
+					
+						<button type="button" class="accordion">Information you will need </button>
+						<div class="accordion-content">
+							
+							<ul>
+								<li>Anticipated project start and end dates</li>
+								<li>Main problem or unknown of your project, and why it is an issue</li>
+								<li>Type of work you will do to resolve the problem or unknown</li>
+								<li>Types of data or results you will collect or analyze</li>
+								<li>Total SR&ED expenditures</li>
+
+							</ul>
+						</div>
+						<button type="button" class="accordion">Documents you will need to attach</button>
+						<div class="accordion-content">
+							
+							<ul>
+								 <li>Project planning documents that outline the timeline, key milestones, and major activities or phases. For example:</li>
+								 <ul>
+									<li>Project plans</li>
+									<li>Gantt charts</li>
+									<li>Work breakdown structures</li>
+									<li>Schedules</li>
+									<li>Planning briefs</li>
+								 </ul>
+								 <li>Documents describing planned internal controls for tracking SR&ED work and associated expenditures, including documentation practices, and how you will maintain simultaneous documentation throughout the project. For example:</li>
+								 <ul>
+									<li>Time-tracking processes</li>
+									<li>Documentation protocols</li>
+									<li>Internal review procedures</li>
+									<li>Controls for capturing experimental records.</li>
+								 </ul>
+								 <li>Key supporting references and documents that demonstrate evidence of due diligence in determining that existing knowledge, solutions, approaches cannot address the scientific or technological uncertainty and your hypothesis, proposed solution or approach. For example:</li>
+								 <ul>
+									<li>Scientific articles and technical papers</li>
+									<li>Meeting minutes</li>
+									<li>Design specifications</li>
+									<li>System architecture diagrams</li>
+									<li>Photographs</li>
+								 </ul>
+								 <li>List of project team members, including potential or prospective project members and their respective areas of expertise and credentials.</li>
+							</ul>
+						</div><br>
+						<div class="group">
+							<input type="checkbox" id="certif-criteria" name="certif-criteria" value="I certify that I verified and meet all the criteria for pre-claim approval. Upon receipt of your Pre-claim approval application CRA will verify these requirements and if your business does not meet the requirements your application may not be processed.  If you are unable to answer or unsure of your standing it is recommended that your contact CRA for confirmation and we can confirm if your business meets requirements before you proceed." data-toggle="">
+											<label for="certif-criteria"></label>
+										</div>
+						<div class="btn-container">
+							<button class="btn btn-primary next-button" type="button">Begin</button>
+						</div>
+					</div>
+				</div>
+			</section>
+			<section class="step active" id="step-1">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Provide project information</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<form id="step-1-form">
+							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<br>
+							<div id="accountinfo-panel-container">                         
+                            </div>
+							<fieldset id="projecttitle-fieldset" class="standard-input">
+								<label class="required-label" for="projecttitle-field">Project title </a>
+								</label>
+								<input id="projecttitle-field" type="text" class="half-width ml-16px">
+							</fieldset>
+
+								<fieldset id="startDate-fieldset" class="ml-16px threequarter-width">
+									<input class="" type="text" id="startDate" name="startDate" placeholder=" ">
+									<label for="startDate" class="required-label">Anticipated project start date</label>
+									<div class="suffix"> <span class="material-icons">calendar_month</span> </div>
+									<div class="datepicker-modal hidden"></div>
+								</fieldset>
+								<fieldset id="projectLength-fieldset" class="standard-input" data-radio-group>
+									<legend class="required-label">How long will your project last?</legend>
+									<div class="group">
+										<input type="radio" id="projectLength-less1y" name="projectLength" value="1 year or less" data-toggle="">
+										<label for="projectLength-less1y"></label>
+									</div>
+									<div class="group">
+										<input type="radio" id="projectLength-2y" name="projectLength" value="2 years" data-toggle="">
+										<label for="projectLength-2y"></label>
+									</div>
+									<div class="group">
+										<input type="radio" id="projectLength-3y" name="projectLength" value="3 years" data-toggle="">
+										<label for="projectLength-3y"></label>
+									</div>
+									<div class="group">
+										<input type="radio" id="projectLength-more3y" name="projectLength" value="More than 3 years" data-toggle="alert-more3y">
+										<label for="projectLength-more3y"></label>
+									</div>
+								</fieldset>
+								<div class="alert warning hidden" id="alert-more3y"> <span class="material-icons">warning</span>
+										<div class="alert-content">The Pre-Claim Approval (PCA) can only provide approval for a maximum of 3 years. Details on the approval period will be sent to you once your application has been processed. </div>
+								</div>
+								<fieldset id="fieldofR-fieldset">
+									 <label class="required-label" for="fieldofR-field">Select the field of research for your project </label>                        
+									<select id="fieldofR-field" name="fieldofR-field">
+										<option value="" selected>(Select)</option>
+										<option value="Natural and formal sciences">Natural and formal sciences</option>
+										<option value="Engineering and technology">Engineering and technology</option>
+										<option value="Medical and Health sciences">Medical and Health sciences</option>
+										<option value="Agricultural sciences">Agricultural sciences</option>
+									</select>
+								</fieldset>
+								<fieldset id="catofSci-fieldset">
+									 <label class="required-label" for="catofSci-field">Select the category of science or technology for your project   </label>                        
+									<select id="catofSci-field" name="catofSci-field">
+										<option value="" selected>(Select)</option>
+										<option value="Natural and formal sciences">Natural and formal sciences</option>
+										<option value="Engineering and technology">Engineering and technology</option>
+										<option value="Medical and Health sciences">Medical and Health sciences</option>
+										<option value="Agricultural sciences">Agricultural sciences</option>
+									</select>
+								</fieldset>
+								<fieldset id="fieldofSci-fieldset">
+									 <label class="required-label" for="fieldofSci-field">Select the field of science or technology for your project </label>                        
+									<select id="fieldofSci-field" name="fieldofSci-field">
+										<option value="" selected>(Select)</option>
+										<option value="Natural and formal sciences">Statistics and probability (1.01.03)</option>
+										<option value="Engineering and technology">Engineering and technology</option>
+										<option value="Medical and Health sciences">Medical and Health sciences</option>
+										<option value="Agricultural sciences">Agricultural sciences</option>
+									</select>
+								</fieldset>
+								<fieldset id="expenditure-fieldset" class="full-width">
+									<label for="expenditure-field" class="required-label">Estimate the total SR&ED expenditures</label>
+									<input class="" type="text" id="expenditure-field" name="expenditure" placeholder=" ">
+									
+									<div class="prefix"> <span class="material-icons">dollar</span> </div>
+								
+								</fieldset>
+							
+						
+				
+					</div>
+					<div class="btn-container">
+						<button class="btn btn-secondary back-button" type="button">Back</button>
+						<button class="btn btn-primary next-button" type="button">Next</button>
+						<button class="hidden btn btn-primary out-button" type="button" onclick="location.href='chooser.html'">Return to Canada.ca</button>
+					</div>
+					</form>
+				
+				</div>
+			</section>
+			<section class="step" id="step-2">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Describe the problem or uncertainty</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<form id="step-2-form">
+							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<fieldset id="uncertainty-fieldset" class="standard-input">
+								<legend class="required-label">What scientific or technological uncertainty are you aiming to address? Include the objective of the project and describe the new scientific or technological knowledge, or the new or improved capability you are seeking (500 words) </legend>
+								<span class="sub-label">To answer this question you must include answers to following questions:
+									<ol>
+										<li>What goals will you be trying to achieve in this project?</li>
+										<li>What new or improved knowledge, process, or capability you are hoping to develop?</li>
+										<li>What technical challenge or limitation prevents this from being straightforward?</li>
+										<li>Describe the issue that can not easily be solved using known methods or existing technology.</li>
+										<li>Explain the gap in current knowledge, or the potential constraint that you may not be able to be overcome. </li>
+										<li>Describe what would be the really cool thing that you figured out that no one else has or knows.</li>
+										</ol>
+								</span>
+								<textarea class="lg-textarea ml-16px" id="uncertainty-tb" data-maxlength="500"></textarea>
+							</fieldset>
+							
+							<div class="btn-container">
+								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-primary next-button" type="button">Next</button>
+							</div>
+						</form>
+					
+					</div>
+				</div>
+			</section>
+			<section class="step" id="step-3">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Descibe the existing knowledge</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<form id="step-3-form">
+							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+						
+							<fieldset id="duedilligence-fieldset" class="standard-input">
+								<legend class="required-label">What due diligence have you completed to confirm that the scientific or technological uncertainty described in line 042 cannot be resolved using existing  scientific or technological knowledge, solutions or approaches? (Maximum 700 words)</legend>
+								<span class="sub-label">To answer this question you must include answers to following questions:
+									<ol>
+										<li>What existing technologies, methods, tools, or solutions you reviewed? </li>
+										<li>Industry standards, published research, internal knowledge, commercial products, or prior approaches.</li>
+										<li>Why existing solutions could not fully resolve the problem or challenge.</li>
+										<li>Describe the issue that can not easily be solved using known methods or existing technology.</li>
+										<li>A description of any gaps, limitations, or risks that remained.</li>
+										<li>A description of any initial evaluations or testing that have been done.</li>
+										</ol>
+								</span>
+								<textarea class="lg-textarea ml-16px" id="duedilligence-tb" data-maxlength="700"></textarea>
+							</fieldset>
+							<div class="btn-container">
+								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-primary next-button" type="button">Next</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+			<section class="step" id="step-4">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Descibe the planned work</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<form id="step-4-form">
+							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+						
+							<fieldset id="hypothesis-fieldset" class="standard-input">
+								<legend class="required-label">What is your hypothesis? (180 words)</legend>
+								
+								<textarea class="md-tb ml-16px" id="hypothesis-tb" data-maxlength="180"></textarea>
+							</fieldset>
+							<fieldset id="solutions-fieldset" class="standard-input">
+								<legend class="required-label">What approaches or solutions do you plan to investigate? (180 words)</legend>
+								
+								<textarea class="md-tb ml-16px" id="solutions-tb" data-maxlength="180"></textarea>
+							</fieldset>
+							<fieldset id="experiments-fieldset" class="standard-input">
+								<legend class="required-label">What experiments, analyses, or testing activities are planned? (180 words)</legend>
+								<span class="sub-label">Describe how you intended to evaluate whether the approach would work.</span>
+								<textarea class="md-tb ml-16px" id="experiments-tb" data-maxlength="180"></textarea>
+							</fieldset>
+							<fieldset id="factors-fieldset" class="standard-input">
+								<legend class="required-label">What scientific or technical factors or variables will be evaluated? (180 words)</legend>
+								<textarea class="md-tb ml-16px" id="factors-tb" data-maxlength="180"></textarea>
+							</fieldset>
+							<fieldset id="success-fieldset" class="standard-input">
+								<legend class="required-label">How will you know if you are successful? (180 words)</legend>
+								<span class="sub-label">Describe your success criteria.</span>
+								<textarea class="md-tb ml-16px" id="success-tb" data-maxlength="180"></textarea>
+							</fieldset>
+							<div class="btn-container">
+								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-primary next-button" type="button">Next</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+			<section class="step" id="step-5">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Provide supporting documentsk</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<form id="step-5-form">
+							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<br><button type="button" class="accordion">Documents you will need to attach</button>
+						<div class="accordion-content">
+							
+							<ul>
+								 <li>Project planning documents that outline the timeline, key milestones, and major activities or phases. For example:</li>
+								 <ul>
+									<li>Project plans</li>
+									<li>Gantt charts</li>
+									<li>Work breakdown structures</li>
+									<li>Schedules</li>
+									<li>Planning briefs</li>
+								 </ul>
+								 <li>Documents describing planned internal controls for tracking SR&ED work and associated expenditures, including documentation practices, and how you will maintain simultaneous documentation throughout the project. For example:</li>
+								 <ul>
+									<li>Time-tracking processes</li>
+									<li>Documentation protocols</li>
+									<li>Internal review procedures</li>
+									<li>Controls for capturing experimental records.</li>
+								 </ul>
+								 <li>Key supporting references and documents that demonstrate evidence of due diligence in determining that existing knowledge, solutions, approaches cannot address the scientific or technological uncertainty and your hypothesis, proposed solution or approach. For example:</li>
+								 <ul>
+									<li>Scientific articles and technical papers</li>
+									<li>Meeting minutes</li>
+									<li>Design specifications</li>
+									<li>System architecture diagrams</li>
+									<li>Photographs</li>
+								 </ul>
+								 <li>List of project team members, including potential or prospective project members and their respective areas of expertise and credentials.</li>
+							</ul>
+						</div>
+							<fieldset id="currentsesh-fieldset" required>
+                            	<label for="currentsesh-upload-tb">Attach your supporting documents</label>
+                           		 <table id="currentsesh-upload-tb" class="table dynamic-table" cellpadding="0" cellspacing="0" required>
+									<thead>
+										<tr>
+											<th>File name</th>
+											<th>Description</th>
+											<th>File size</th>
+											<th>Actions</th>
+										</tr>
+									</thead>
+									<tbody data-placeholder="You have not uploaded any documents.">
+									</tbody>
+								</table>
+                            <div class="buttons">
+                                <button class="btn-secondary close" type="button" data-togglelb="uploaddoc-lightbox">
+                                <span class="material-icons">
+                                add
+                                </span>
+                                Attach document</button>
+                            </div>
+                            <div id="uploadedfile-info" style="text-align:right;">
+                                Total size: <span id="uploadedfiles-size"></span><br>
+                                Maximum total file upload size is 500 MB
+                            </div>
+                        </fieldset>
+						<strong>Note:</strong> Once the PCA is saved, documents cannot be edited or deleted. 
+						<h5>Documents that have been saved to this PCA</h5>   
+						<table id="pastsesh-upload-tb" class="table dynamic-table" cellpadding="0" cellspacing="0" required>
+									<thead>
+										<tr>
+											<th>File name</th>
+											<th>Description</th>
+											<th>File size</th>
+											<th>Actions</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>You have no documents saved to this PCA.</tr>
+									</tbody>
+								</table>
+
+							<div class="btn-container">
+								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-primary next-button" type="button">Next</button>
+							</div>
+						</form>
+						<div class="lightbox-container" id="uploaddoc-lightbox">
+                        <div class="lightbox">
+                            <div class="header">
+                                <h3>Upload document</h3>
+                                <button class="btn-tertiary" type="button" data-closebtn>
+                                <span class="material-icons">clear</span></button>
+                            </div>
+                            <div class="lightbox-content">
+                                <form id="s5-doc-form">
+                                    <div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required.</div>
+                                    <br>
+                                    <label for="s5lb-upload" class="required-label">Upload your document</label>
+                                    Allowable file types: .pdf, .doc, .docx, .xls, .xlsx, .rtf, .txt, .jpg, .jpeg, .tiff, .tif, .xps
+                                    <br><button id="s5-browsebtn" type="button" class="btn-secondary">Browse</button>
+                                    <span class="fileName" id="s5-filename-display" data-formelement data-placeholder="No file chosen.">No file chosen.</span>
+
+                                    <input type="hidden" id="s5-filename" name="s5-filename">
+                                    
+                                    
+                                    <label for="s5lb-descfield" class="required-label">Provide a brief description of your document (maximum 150 characters).</label>
+                                    <input type="text" id="s5-desc" name="s5-desc" maxlength="150" required>
+                                    <input type="hidden" id="s5-size" name="s5-size">
+                                </form>
+                                <div id="s5-browsewind" class="browse-window hidden">
+                                    <div class="browse-window-header">Browse</div>
+                                        <ul class="file-list">
+                                            <li id="contract-doc" class="file-item"><span class="material-icons file-icon">insert_drive_file</span>WillTestament.pdf</li>
+                                            <li id="detailedassets-doc"  class="file-item"><span class="material-icons file-icon">insert_drive_file</span>DetailedAssetsList.docx</li>
+                                            <li id="assetdistribution-doc" class="file-item"><span class="material-icons file-icon">insert_drive_file</span>AssetDistribution_List.docx</li>
+                                            <li id="mortgage-doc" class="file-item"><span class="material-icons file-icon">insert_drive_file</span>MortgageStatement.docx</li>
+                                        </ul>
+                                </div>
+                            </div>
+                            <div class="buttons">
+                                <button class="btn-primary" type="button" data-submit>Upload document</button>
+                                <button class="btn-tertiary" type="button" data-closebtn>Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+					</div>
+				</div>
+			</section>
+			<section class="step" id="step-6">
+				<div class="step-header">
+					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
+					<h2>Review</h2> </div>
+				<div class="step-content">
+					<div class="container">
+						<form id="step-6-form">
+							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							   <div id="review-container"></div>
+	<div class="group">
+							<input type="checkbox" id="certif-complete" name="certif-complete" value="I certify that I have examined the information provided in the form and in the attachments and to the best of my knowledge it is true, correct and complete." data-toggle="">
+											<label for="certif-criteria"></label>
+										</div>
+							   <div class="btn-container">
+								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-primary next-button" type="button">Complete project</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+			
+		</main>
+	</div>
+	<script src="scripts.js"></script>
+	<script>
+    function returnToHome(){
+        window.location.href="index.html";
+        sessionStorage.clear();
+    }
+</script>
+        
+</body>
+
+</html>
