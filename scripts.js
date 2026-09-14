@@ -2069,8 +2069,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('beforeunload', (event) => {
-    const navigating = sessionStorage.getItem("navigatingToConfirmation");
-    if (!navigating) {
+    const navigatingToConfirmation = sessionStorage.getItem("navigatingToConfirmation");
+const navigatingToStepper = sessionStorage.getItem("navigatingToStepper");
+
+if (!navigatingToConfirmation && !navigatingToStepper) {
+   
         // Clear transient session data
         sessionStorage.clear();
         // Remove any task-scoped PCA lists so refresh/back-to-chooser resets to default
