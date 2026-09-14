@@ -26,11 +26,16 @@
     <button onclick="chooseTask(1)">Task 1</button>
     <button onclick="chooseTask(2)">Task 2</button>
     <button onclick="chooseTask(3)">Task 3</button>
-    <button onclick="chooseTask(4)">Task 4</button>
-    <button onclick="chooseTask(5)">Task 5</button>
 
 
     <script>
+        // When showing the chooser, clear any transient session data and task PCAs
+        document.addEventListener('DOMContentLoaded', () => {
+            sessionStorage.clear();
+            Object.keys(localStorage).forEach(key => {
+                if (key && key.indexOf('pca_list_task_') === 0) localStorage.removeItem(key);
+            });
+        });
         function chooseTask(taskNumber) {
             const tasks = {
 
@@ -40,31 +45,79 @@
                         businessName: "Nick's Hat Shop",
                         telNumber: "613-123-4567",
                     },
-                        bn9: "123456789",
-                        account: "RC001",
-                        
-                    
+                    bn9: "123456789",
+                    account: "RC001"
                 },
                 2: {
-                      result: "factual"
+                    accountInfo: {
+                        businessNumber: "987654321 RC 002",
+                        businessName: "Maple Supplies Ltd.",
+                        telNumber: "613-555-1212"
+                    },
+                    bn9: "987654321",
+                    account: "RC002"
                 },
                 3: {
-                    result: "deeemednonres"
-                },
-                4: {
-                    result: "res"
-                },
-                5: {
-                    result: "nonres"
+                    accountInfo: {
+                        businessNumber: "555555555 RC 003",
+                        businessName: "Acme Robotics",
+                        telNumber: "613-777-8888"
+                    },
+                    bn9: "555555555",
+                    account: "RC003",
+                    // Pre-populate one PCA with two projects for demo
+                    pcaList: [
+                        {
+                            id: "pca_task3_1",
+                            name: "Acme Q4 R&D",
+                            status: "In progress",
+                            lastModified: "2026-09-14T12:00:00.000Z",
+                            projects: [
+                                {
+                                    id: "proj_task3_1",
+                                    name: "Autonomous navigation",
+                                    status: "In progress",
+                                    created: "2026-08-01T09:00:00.000Z",
+                                    lastModified: "2026-08-15T10:00:00.000Z",
+                                    data: { projecttitle: "Autonomous navigation" }
+                                },
+                                {
+                                    id: "proj_task3_2",
+                                    name: "Sensor fusion",
+                                    status: "Complete",
+                                    created: "2026-07-01T09:00:00.000Z",
+                                    lastModified: "2026-08-20T10:00:00.000Z",
+                                    data: { projecttitle: "Sensor fusion" }
+                                }
+                            ]
+                        }
+                    ]
                 }
             };
 
             // Store the selected task's data in sessionStorage
             sessionStorage.setItem("selectedTask", JSON.stringify(tasks[taskNumber]));
             sessionStorage.setItem("taskNum", taskNumber);
+            // Also persist a copy to localStorage as a fallback for navigation between file:// pages
+            try {
+                localStorage.setItem("selectedTask", JSON.stringify(tasks[taskNumber]));
+                localStorage.setItem("taskNum", String(taskNumber));
+            } catch (e) {
+                // ignore storage errors
+            }
 
-            // Redirect to main index page
-            window.location.href = "index.html";
+            // Initialize task-scoped PCA list in localStorage. If task data provides a pcaList, use it; otherwise start empty.
+            const pcaKey = `pca_list_task_${taskNumber}`;
+            if (tasks[taskNumber].pcaList) {
+                localStorage.setItem(pcaKey, JSON.stringify(tasks[taskNumber].pcaList));
+            } else if (!localStorage.getItem(pcaKey)) {
+                // ensure empty by default
+                localStorage.setItem(pcaKey, JSON.stringify([]));
+            }
+
+            // Redirect to PCA overview page (will focus the Start button)
+            sessionStorage.setItem('autoStartPCA','true');
+            window.location.href = "pca-overview.html";
         }
     </script>
 </body>

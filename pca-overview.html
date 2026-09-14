@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCA Overview</title>
+<link rel="stylesheet" href="styles/base.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+	<div class="top-ctn">
+		<div class="top-content">
+			<div class="brand"> <img src="https://www.canada.ca/etc/designs/canada/wet-boew/assets/sig-blk-en.svg" alt="Government of Canada"> </div> <a href="#" class="language-switch">Français</a> </div>
+	</div>
+	<div class="bottom-ctn">
+		<div class="bottom-content">
+			<div class="left-content">
+			Canada Revenue Agency<br>
+			My Business Account
+			</div>
+			<div class="right-content">
+				<div>
+					<span class="material-icons biz-icon">business_center</span>
+				</div>
+				<div class="account-info">
+				<span id="task-account-name"></span>
+				<span id="task-account-bn9"></span>
+				</div>
+				
+			</div>
+		</div>
+	</div>
+</header>
+<div class="page-container">
+	<div class="heading">
+		<div class="small-h1">Scientific Research & Experimental Development (SR&ED)</div>
+		<h1>Pre-claim approval (PCA) overview</h1>
+	</div>
+	<main id="pca-overview" class="content">
+		<section>
+			<p>Submitting a PCA can help you:</p>
+            <ul>
+                <li>get approval for future SR&ED projects (for up to 3 years)</li>
+                <li>receive relevant information directly from CRA</li>
+                <li>carry out an accelerated 90-day expenditure only review (on approved projects)</li>
+            </ul>
+            <p>Each PCA can contain a maximum of 3 projects. If a PCA is not submitted or modified after 18 months, it will be deleted.</p>
+            <h5>Pre-claim approvals (PCAs)</h5>
+			<table id="pca-overview-tb" class="table" cellpadding="0" cellspacing="0">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Status</th>
+						<th>Last modified</th>
+						<th>Number of projects</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			<div class="btn-container">
+				<button id="start-new-pca" class="btn btn-primary" type="button">Start a new PCA</button>
+			</div>
+		</section>
+	</main>
+</div>
+
+<!-- Edit name lightbox -->
+<div id="edit-pca-lightbox" class="lightbox-container">
+	<div class="lightbox">
+		<div class="header">
+			<h3>Edit PCA name</h3>
+			<button class="btn-tertiary" type="button" data-closebtn="edit-pca-lightbox">
+			<span class="material-icons">clear</span></button>
+		</div>
+		<div class="lightbox-content">
+			<form id="edit-pca-form">
+				<label for="edit-pca-name" class="required-label">PCA name</label>
+				<input type="text" id="edit-pca-name" name="edit-pca-name" maxlength="200">
+				<div class="btn-container">
+					<button type="button" class="btn btn-secondary" data-closebtn="edit-pca-lightbox">Cancel</button>
+					<button type="submit" class="btn btn-primary">Save</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Start PCA lightbox -->
+<div id="start-pca-lightbox" class="lightbox-container">
+	<div class="lightbox">
+		<div class="header">
+			<h3>Start a new PCA</h3>
+			<button class="btn-tertiary" type="button" data-closebtn="start-pca-lightbox">
+				<span class="material-icons">clear</span></button>
+		</div>
+		<div class="lightbox-content">
+			<form id="start-pca-form">
+				<label for="start-pca-name" class="required-label">Provide a name to help you recognize this PCA</label>
+				<input type="text" id="start-pca-name" name="start-pca-name" maxlength="200" required>
+				<div class="btn-container">
+					<button type="button" class="btn btn-secondary" data-closebtn="start-pca-lightbox">Cancel</button>
+					<button type="submit" class="btn btn-primary">Start PCA</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script src="scripts.js"></script>
+</body>
+</html>

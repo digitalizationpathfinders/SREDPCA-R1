@@ -1,3 +1,50 @@
+console.debug('scripts.js loaded');
+
+// Detect a true browser reload and return user to chooser, unless an allow flag is set
+try {
+    let isReload = false;
+    try {
+        const navEntries = performance.getEntriesByType && performance.getEntriesByType('navigation');
+        if (navEntries && navEntries.length && navEntries[0].type) {
+            isReload = navEntries[0].type === 'reload';
+        } else if (performance.navigation && typeof performance.navigation.type === 'number') {
+            isReload = performance.navigation.type === performance.navigation.TYPE_RELOAD;
+        }
+    } catch (e) {
+        // ignore
+    }
+
+    if (isReload) {
+        // If an intentional navigation set an allow flag, consume it and do not redirect —
+        // but only if the flag is recent. This prevents stale localStorage flags from
+        // suppressing the chooser redirect on later reloads.
+        const allowVal = localStorage.getItem('allowStepper');
+        let allowRecent = false;
+        if (allowVal) {
+            const ts = parseInt(allowVal, 10);
+            if (!isNaN(ts) && (Date.now() - ts) < 5000) allowRecent = true; // 5s window
+        }
+
+        if (allowRecent) {
+            try { localStorage.removeItem('allowStepper'); } catch (e) {}
+            console.debug('Reload detected but recent allowStepper flag present — skipping chooser redirect');
+        } else {
+            // Either no flag or stale flag: remove stale flag and redirect when appropriate
+            try { localStorage.removeItem('allowStepper'); } catch (e) {}
+            const path = (location.pathname || '').split('/').pop() || '';
+            const exempt = ['chooser.html', 'confirmation.html'];
+            if (!exempt.includes(path)) {
+                try { sessionStorage.clear(); } catch (e) {}
+                window.location.href = 'chooser.html';
+            } else {
+                try { sessionStorage.clear(); } catch (e) {}
+            }
+        }
+    }
+} catch (e) {
+    console.warn('Reload detection failed', e);
+}
+
 class Stepper {
     constructor(stepSelector) {
         this.steps = Array.from(document.querySelectorAll(stepSelector));
@@ -822,7 +869,8 @@ class TableObj {
         this.renderEmptyTable();
     }
     renderEmptyTable() {
-        this.tbody.innerHTML = `<tr><td colspan="${this.columnCount + 1}" style="text-align:center;">${this.defaultText}</td></tr>`;
+        // If the table has a placeholder data attribute (defaultText), render a proper single-row placeholder
+        this.tbody.innerHTML = `<tr class="no-docs-row-placeholder"><td colspan="${this.columnCount}" class="no-docs-cell">${this.defaultText}</td></tr>`;
     }
     addRow(data, rowIndex = this.rows.length) {
         // If the table is displaying the default placeholder row, clear it
@@ -837,7 +885,12 @@ class TableObj {
         // Populate row with data
         Object.values(data).forEach((value) => {
             const td = document.createElement("td");
-            td.textContent = value || "N/A"; // Handle empty fields
+            // Allow HTML when the value appears to contain tags (for links/actions)
+            if (typeof value === 'string' && value.indexOf('<') !== -1) {
+                td.innerHTML = value;
+            } else {
+                td.textContent = value || "N/A"; // Handle empty fields
+            }
             tr.appendChild(td);
         });
 
@@ -861,8 +914,10 @@ class TableObj {
             `;
         }
 
-        actionTd.innerHTML = actionHTML;
-        tr.appendChild(actionTd);
+        if (actionHTML.trim() !== '') {
+            actionTd.innerHTML = actionHTML;
+            tr.appendChild(actionTd);
+        }
 
         // Append row to table
         this.tbody.appendChild(tr);
@@ -1838,120 +1893,913 @@ function populateFieldsForCategory(parent, subcat) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const navFrom = params.get('from');
 
+    const needsTask = document.querySelector('.stepper') || document.querySelector('.confirmation-wrapper');
     let taskData = sessionStorage.getItem("selectedTask");
 
-    if (!taskData) {
-        // If user somehow lands here without choosing a task, redirect them back
-        window.location.href = "chooser.html";
-    } else {
+    if (needsTask) {
+        // if sessionStorage is missing but localStorage has the selected task, copy it over
+        if (!taskData && localStorage.getItem('selectedTask')) {
+            sessionStorage.setItem('selectedTask', localStorage.getItem('selectedTask'));
+            if (localStorage.getItem('taskNum')) sessionStorage.setItem('taskNum', localStorage.getItem('taskNum'));
+            taskData = sessionStorage.getItem('selectedTask');
+        }
+        if (!taskData) {
+                // If this navigation originated from the PCA overview or we have an allow flag, allow localStorage fallback
+                const allowVal = localStorage.getItem('allowStepper');
+                let allowRecent = false;
+                if (allowVal) {
+                    const ts = parseInt(allowVal, 10);
+                    if (!isNaN(ts) && (Date.now() - ts) < 5000) allowRecent = true;
+                }
+                if ((navFrom === 'pca' && localStorage.getItem('selectedTask')) || allowRecent) {
+                    if (localStorage.getItem('selectedTask')) {
+                        sessionStorage.setItem('selectedTask', localStorage.getItem('selectedTask'));
+                        if (localStorage.getItem('taskNum')) sessionStorage.setItem('taskNum', localStorage.getItem('taskNum'));
+                        taskData = sessionStorage.getItem('selectedTask');
+                    }
+                    // clear the allow flag after use
+                    try { localStorage.removeItem('allowStepper'); } catch (e) {}
+                }
+            if (!taskData) {
+                // If user lands on a page that requires a task without selecting one, redirect back
+                window.location.href = "chooser.html";
+                return;
+            }
+        }
         taskData = JSON.parse(taskData);
         console.log("Loaded Task Data:", taskData);
         DataManager.saveData("accountInfo", taskData.accountInfo);
 
-            if (taskData.accountInfo) {
-                console.log(taskData.accountInfo.businessName)
-             document.getElementById("task-account-name").textContent = taskData.accountInfo.businessName;
-             document.getElementById("task-account-bn9").textContent = taskData.bn9;
+        if (taskData.accountInfo) {
+            const nameEl = document.getElementById("task-account-name");
+            const bn9El = document.getElementById("task-account-bn9");
+            if (nameEl) nameEl.textContent = taskData.accountInfo.businessName || '';
+            if (bn9El) bn9El.textContent = taskData.bn9 || '';
         }
-
-      
-    }
-    // Initialize Stepper
-    const stepper = new Stepper('.step');
-
-
-
-    // Initialize ProgressiveDisclosure and pass the stepper instance
-    new ProgressiveDisclosure(stepper);
-
-    // Load the last step from session storage
-    const savedStepId = sessionStorage.getItem('currentStep');
-    if (savedStepId) {
-        stepper.jumpStep(savedStepId);
-    }
-
-    // Add event listeners to all next buttons
-    document.querySelector('.stepper').addEventListener('click', (event) => {
-        if (event.target.classList.contains('next-button')) {
-            stepper.navigateStep('next');
-
-        } else if (event.target.classList.contains('back-button')) {
-            stepper.navigateStep('back');
-
-        }
-    });
-
-    // Populate radio button labels with their 'value'
-    const inputsWithLabels = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
-    inputsWithLabels.forEach(input => {
-        const label = document.querySelector(`label[for="${input.id}"]`);
-        if (label) {
-            label.textContent = input.value;
-
-        }
-    });
-
-    document.querySelectorAll("textarea[data-maxlength]").forEach(textarea => {
-        const mode = textarea.dataset.count === 'words' ? 'words' : 'chars';
-        new CharacterCounter(textarea, mode);
-    });
-
-    // Initialize dynamic category and field dropdowns
-    populateCategoryDropdowns();
-    const catSelect = document.getElementById('catofSci-field');
-    const fieldOfRSelect = document.getElementById('fieldofR-field');
-    const fieldOfSciSelect = document.getElementById('fieldofSci-field');
-
-    if (fieldOfRSelect) {
-        fieldOfRSelect.addEventListener('change', (e) => {
-            const selectedParent = e.target.value;
-            populateCatForFieldOfResearch(selectedParent);
-        });
-    }
-
-    if (catSelect) {
-        catSelect.addEventListener('change', (e) => {
-            const selectedSubcat = e.target.value;
-            const parent = e.target.selectedOptions[0]?.dataset?.parent || '';
-            // ensure parent select matches
-            if (fieldOfRSelect && parent) fieldOfRSelect.value = parent;
-            populateFieldsForCategory(parent, selectedSubcat);
-        });
-        // If there is a pre-selected category, populate fields accordingly
-        if (catSelect.value) {
-            const preParent = catSelect.selectedOptions[0]?.dataset?.parent || '';
-            populateFieldsForCategory(preParent, catSelect.value);
+    } else {
+        // For pages that don't strictly require a selected task, optionally set account info if available
+        if (taskData) {
+            try {
+                taskData = JSON.parse(taskData);
+                const nameEl = document.getElementById("task-account-name");
+                const bn9El = document.getElementById("task-account-bn9");
+                if (taskData.accountInfo) {
+                    if (nameEl) nameEl.textContent = taskData.accountInfo.businessName || '';
+                    if (bn9El) bn9El.textContent = taskData.bn9 || '';
+                }
+            } catch (e) {
+                console.warn('Invalid selectedTask JSON');
+            }
         }
     }
+    // Initialize stepper and related UI only if this page contains the stepper
+    const stepperContainer = document.querySelector('.stepper');
+    if (stepperContainer) {
+        // Initialize Stepper
+        const stepper = new Stepper('.step');
 
-    if (fieldOfSciSelect) {
-        fieldOfSciSelect.addEventListener('change', (e) => {
-            const selectedOpt = e.target.selectedOptions[0];
-            if (!selectedOpt) return;
-            const parent = selectedOpt.dataset.parent;
-            const subcat = selectedOpt.dataset.subcat;
-            if (fieldOfRSelect && parent) fieldOfRSelect.value = parent;
-            if (catSelect && subcat) catSelect.value = subcat;
+        // Initialize ProgressiveDisclosure and pass the stepper instance
+        new ProgressiveDisclosure(stepper);
+
+        // Load the last step from session storage
+        const savedStepId = sessionStorage.getItem('currentStep');
+        if (savedStepId) {
+            stepper.jumpStep(savedStepId);
+        }
+
+        // Add event listeners to all next/back buttons within the stepper
+        stepperContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('next-button')) {
+                // If currently on the last step, finalize project and navigate to confirmation
+                const currentIndex = stepper.steps.indexOf(stepper.activeStep);
+                const lastIndex = stepper.steps.length - 1;
+                if (currentIndex === lastIndex) {
+                    // Ensure last step data is stored
+                    stepper.storeData(currentIndex);
+                    // Attempt to save project to PCA if applicable
+                    const saved = saveCurrentProjectToPCA(true);
+                    if (!saved) {
+                        alert('Could not save the project. Ensure you started this flow by clicking "Add a new project" from a PCA projects page.');
+                        return; // Do not navigate away if save failed
+                    }
+                    // Prevent session data from being cleared on unload while navigating
+                    sessionStorage.setItem('navigatingToConfirmation', 'true');
+                    // Redirect to confirmation page
+                    window.location.href = 'confirmation.html';
+                } else {
+                    stepper.navigateStep('next');
+                }
+
+            } else if (event.target.classList.contains('back-button')) {
+                stepper.navigateStep('back');
+
+            }
+        });
+
+        // Populate radio button labels with their 'value', but skip labels explicitly marked to preserve their content
+        const inputsWithLabels = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+        inputsWithLabels.forEach(input => {
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            if (label) {
+                // If the label includes data-preserve, do not overwrite its innerHTML
+                if (label.dataset && label.dataset.preserve === 'true') return;
+                label.textContent = input.value;
+            }
+        });
+
+        // Initialize CharacterCounters
+        document.querySelectorAll("textarea[data-maxlength]").forEach(textarea => {
+            const mode = textarea.dataset.count === 'words' ? 'words' : 'chars';
+            new CharacterCounter(textarea, mode);
+        });
+
+        // Initialize dynamic category and field dropdowns
+        populateCategoryDropdowns();
+        const catSelect = document.getElementById('catofSci-field');
+        const fieldOfRSelect = document.getElementById('fieldofR-field');
+        const fieldOfSciSelect = document.getElementById('fieldofSci-field');
+
+        if (fieldOfRSelect) {
+            fieldOfRSelect.addEventListener('change', (e) => {
+                const selectedParent = e.target.value;
+                populateCatForFieldOfResearch(selectedParent);
+            });
+        }
+
+        if (catSelect) {
+            catSelect.addEventListener('change', (e) => {
+                const selectedSubcat = e.target.value;
+                const parent = e.target.selectedOptions[0]?.dataset?.parent || '';
+                // ensure parent select matches
+                if (fieldOfRSelect && parent) fieldOfRSelect.value = parent;
+                populateFieldsForCategory(parent, selectedSubcat);
+            });
+            // If there is a pre-selected category, populate fields accordingly
+            if (catSelect.value) {
+                const preParent = catSelect.selectedOptions[0]?.dataset?.parent || '';
+                populateFieldsForCategory(preParent, catSelect.value);
+            }
+        }
+
+        if (fieldOfSciSelect) {
+            fieldOfSciSelect.addEventListener('change', (e) => {
+                const selectedOpt = e.target.selectedOptions[0];
+                if (!selectedOpt) return;
+                const parent = selectedOpt.dataset.parent;
+                const subcat = selectedOpt.dataset.subcat;
+                if (fieldOfRSelect && parent) fieldOfRSelect.value = parent;
+                if (catSelect && subcat) catSelect.value = subcat;
+            });
+        }
+
+
+        //Accordion functionality
+        const accordions = document.querySelectorAll('.accordion');
+        accordions.forEach(accordion => {
+            accordion.addEventListener('click', function() {
+                this.classList.toggle('active');
+
+            });
         });
     }
-
-
-
-    //Accordion functionality
-    const accordions = document.querySelectorAll('.accordion');
-    accordions.forEach(accordion => {
-        accordion.addEventListener('click', function() {
-            this.classList.toggle('active');
-
-        });
-    });
 
 });
 
 window.addEventListener('beforeunload', (event) => {
-    if (!sessionStorage.getItem("navigatingToConfirmation")) {
+    const navigating = sessionStorage.getItem("navigatingToConfirmation");
+    if (!navigating) {
+        // Clear transient session data
         sessionStorage.clear();
+        // Remove any task-scoped PCA lists so refresh/back-to-chooser resets to default
+        Object.keys(localStorage).forEach(key => {
+            if (key && key.indexOf('pca_list_task_') === 0) {
+                localStorage.removeItem(key);
+            }
+        });
     }
     sessionStorage.removeItem("navigatingToConfirmation"); // Reset flag after navigation
 });
+
+/* PCA overview & projects pages logic */
+function _generateId(prefix = 'id') {
+    return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+}
+
+function _formatDateNice(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+    return d.toLocaleDateString('en-US', opts);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function _pcaStorageKey() {
+    const taskNum = sessionStorage.getItem('taskNum') || 'default';
+    return `pca_list_task_${taskNum}`;
+}
+
+function getPCAs() {
+    return JSON.parse(localStorage.getItem(_pcaStorageKey()) || '[]');
+}
+
+function savePCAs(list) {
+    localStorage.setItem(_pcaStorageKey(), JSON.stringify(list));
+}
+
+// Ensure a PCA has two demo projects prepopulated (only once per PCA)
+function _ensureDemoProjectsForPCA(list, pcaId) {
+    if (!Array.isArray(list) || !pcaId) return false;
+    const pca = list.find(p => p.id === pcaId) || list[0];
+    if (!pca) return false;
+    const flagKey = `pca_demo_populated_${pca.id}`;
+    if (localStorage.getItem(flagKey) === 'true') return false;
+
+    pca.projects = pca.projects || [];
+    const now = new Date().toISOString();
+
+    const demo = [
+        {
+            id: _generateId('proj'),
+            name: 'Research Project A',
+            status: 'Complete',
+            created: now,
+            lastModified: now,
+            data: {
+                startDate: '2024-01-01',
+                projectLength: '3 months',
+                fieldOfResearch: 'Natural and formal sciences',
+                categoryOfScience: 'Natural and formal sciences',
+                fieldOfScience: 'Biological sciences',
+                expenditure: '10,000',
+                uncertainty: 'Proof-of-concept required',
+            }
+        },
+        {
+            id: _generateId('proj'),
+            name: 'Research Project B',
+            status: 'Complete',
+            created: now,
+            lastModified: now,
+            data: {
+                startDate: '2024-03-15',
+                projectLength: '6 months',
+                fieldOfResearch: 'Engineering and technology',
+                categoryOfScience: 'Engineering and technology',
+                fieldOfScience: 'Electrical engineering',
+                expenditure: '25,000',
+                uncertainty: 'Prototype performance unknown',
+            }
+        }
+    ];
+
+    // Only add demo projects up to two and do not exceed 3 total
+    while (pca.projects.length < 2 && pca.projects.length < 3) {
+        pca.projects.push(demo[pca.projects.length] || demo[1]);
+    }
+
+    pca.lastModified = now;
+    try {
+        localStorage.setItem(flagKey, 'true');
+        savePCAs(list);
+    } catch (e) {
+        console.warn('Failed to persist demo projects flag', e);
+    }
+    return true;
+}
+
+// find a PCA by id across all task lists as a fallback
+function findPCAById(pcaId) {
+    if (!pcaId) return null;
+    // try current task first
+    let list = getPCAs();
+    let pca = list.find(p => p.id === pcaId);
+    if (pca) return pca;
+
+    // search all keys in localStorage that match pca_list_task_
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('pca_list_task_')) continue;
+        try {
+            const arr = JSON.parse(localStorage.getItem(key) || '[]');
+            const found = arr.find(p => p.id === pcaId);
+            if (found) return found;
+        } catch (e) {
+            // ignore parse errors
+        }
+    }
+    return null;
+}
+
+function initPCAOverview() {
+    const startBtn = document.getElementById('start-new-pca');
+    const editLightbox = document.getElementById('edit-pca-lightbox');
+    const editForm = document.getElementById('edit-pca-form');
+    const tableObj = new TableObj('pca-overview-tb', { allowEdit: false, allowDelete: false });
+    const tableBody = tableObj.tbody;
+    let editingPcaId = null;
+
+    function render() {
+        // Ensure session has taskNum (fallback from localStorage) so getPCAs reads the correct key
+        if (!sessionStorage.getItem('taskNum') && localStorage.getItem('taskNum')) {
+            try { sessionStorage.setItem('taskNum', localStorage.getItem('taskNum')); } catch (e) {}
+        }
+        let list = getPCAs();
+        // If no PCAs found in the session-scoped key, try loading from localStorage using the stored taskNum
+        if ((!list || list.length === 0) && localStorage.getItem('taskNum')) {
+            try {
+                const fallbackKey = `pca_list_task_${localStorage.getItem('taskNum')}`;
+                const fallback = JSON.parse(localStorage.getItem(fallbackKey) || '[]');
+                if (fallback && fallback.length > 0) {
+                    list = fallback;
+                    // also persist into the session-scoped key so other helpers use it
+                    try { savePCAs(list); } catch (e) {}
+                }
+            } catch (e) { /* ignore */ }
+        }
+        tableObj.rows = [];
+        // Ensure demo projects exist for the current PCA (only once)
+        try {
+            const current = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
+            if (list && list.length > 0) _ensureDemoProjectsForPCA(list, current || (list[0] && list[0].id));
+        } catch (e) {
+            console.warn('Demo project injection failed', e);
+        }
+        // Fallback: if currentPCA exists but wasn't present in the task-scoped list,
+        // search all task-scoped keys and inject demo projects where the PCA is stored.
+        try {
+            const currentId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
+            if (currentId) {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key || !key.startsWith('pca_list_task_')) continue;
+                    try {
+                        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                        const found = arr.find(p => p.id === currentId);
+                        if (found) {
+                            const changed = _ensureDemoProjectsForPCA(arr, currentId);
+                            if (changed) {
+                                localStorage.setItem(key, JSON.stringify(arr));
+                            }
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                }
+            }
+        } catch (e) { console.warn('Demo injection fallback failed', e); }
+        if (list.length === 0) {
+            tableObj.tbody.innerHTML = `<tr><td colspan="5">You have not created any PCAs.</td></tr>`;
+            return;
+        }
+        list.forEach(pca => {
+            const linkTaskNum = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum') || '';
+            const nameHtml = `<a href="pca-projects.html?pcaId=${encodeURIComponent(pca.id)}&taskNum=${encodeURIComponent(linkTaskNum)}" class="open-pca" data-id="${pca.id}">${escapeHtml(pca.name||'Untitled PCA')}</a>`;
+            const actionsHtml = `
+                <a href="#" class="action-link edit-pca" data-id="${pca.id}" title="Edit"><span class="material-icons">edit</span> <span class="action-text">Edit</span></a>
+                <a href="#" class="action-link delete-pca" data-id="${pca.id}" title="Delete"><span class="material-icons">close</span> <span class="action-text">Delete</span></a>
+                <a href="#" class="action-link submit-pca" data-id="${pca.id}" title="Submit"><span class="material-icons">send</span> <span class="action-text">Submit</span></a>
+            `;
+            tableObj.rows.push({
+                Name: nameHtml,
+                Status: pca.status || 'In progress',
+                'Last modified': _formatDateNice(pca.lastModified),
+                'Number of projects': `${(pca.projects||[]).length} of 3`,
+                Action: actionsHtml
+            });
+        });
+        tableObj.refreshTable();
+    }
+
+    // start new PCA -> open Start PCA lightbox
+    const startLightbox = document.getElementById('start-pca-lightbox');
+    const startForm = document.getElementById('start-pca-form');
+
+    startBtn.addEventListener('click', () => {
+        if (startLightbox) startLightbox.classList.add('open');
+        const nameInput = document.getElementById('start-pca-name');
+        if (nameInput) {
+            nameInput.value = '';
+            nameInput.focus();
+        }
+    });
+
+    // handle Start PCA submission
+    if (startForm) {
+        startForm.addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const name = (document.getElementById('start-pca-name')?.value || '').trim();
+            if (!name) {
+                alert('Please provide a name for this PCA.');
+                return;
+            }
+            // Ensure taskNum is present in sessionStorage (fallback from localStorage)
+            const taskNumFallback = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum');
+            if (taskNumFallback && !sessionStorage.getItem('taskNum')) {
+                sessionStorage.setItem('taskNum', taskNumFallback);
+            }
+            const list = getPCAs();
+            const id = _generateId('pca');
+            const now = new Date().toISOString();
+            const newPca = { id, name: name, status: 'In progress', lastModified: now, projects: [] };
+            list.unshift(newPca);
+            savePCAs(list);
+            // Persist current PCA id + name to session and local storage for reliable navigation
+            try {
+                sessionStorage.setItem('currentPCA', id);
+                sessionStorage.setItem('currentPCAName', name);
+                localStorage.setItem('currentPCA', id);
+                localStorage.setItem('currentPCAName', name);
+                // also ensure the proper task-scoped key exists in localStorage
+                const pcaKey = _pcaStorageKey();
+                try { localStorage.setItem(pcaKey, JSON.stringify(list)); } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to persist current PCA identifiers', e);
+            }
+            // close and re-render the overview table (do not auto-navigate)
+            startLightbox.classList.remove('open');
+            render();
+        });
+    }
+
+    // delegate actions
+    tableBody.addEventListener('click', (e) => {
+        const openBtn = e.target.closest('.open-pca');
+            if (openBtn) {
+            e.preventDefault();
+            const id = openBtn.dataset.id;
+            // store current PCA id and name as a session fallback
+            sessionStorage.setItem('currentPCA', id);
+            // store the visible link text as the PCA name (simple, reliable)
+            try {
+                const linkText = (openBtn.textContent || '').trim();
+                if (linkText) {
+                    sessionStorage.setItem('currentPCAName', linkText);
+                    try { localStorage.setItem('currentPCA', id); localStorage.setItem('currentPCAName', linkText); } catch(e) {}
+                    console.debug('Stored currentPCAName from link:', linkText);
+                }
+            } catch (e) { console.warn('Failed to save currentPCAName', e); }
+            // ensure task identifiers and selectedTask persist across navigation
+            const taskNum = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum');
+            if (taskNum) {
+                sessionStorage.setItem('taskNum', taskNum);
+                try { localStorage.setItem('taskNum', taskNum); } catch (e) {}
+            }
+            if (!sessionStorage.getItem('selectedTask') && localStorage.getItem('selectedTask')) {
+                sessionStorage.setItem('selectedTask', localStorage.getItem('selectedTask'));
+            }
+            // clear adding flags
+            sessionStorage.removeItem('addingProject');
+            // navigate to projects page including pcaId and taskNum to ensure correct context
+            const taskNumParam = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum') || '';
+            const query = new URLSearchParams({ pcaId: id, taskNum: taskNumParam }).toString();
+            window.location.href = `pca-projects.html?${query}`;
+            return;
+        }
+        const editBtn = e.target.closest('.edit-pca');
+        const delBtn = e.target.closest('.delete-pca');
+        const submitBtn = e.target.closest('.submit-pca');
+        if (editBtn) {
+            editingPcaId = editBtn.dataset.id;
+            const list = getPCAs();
+            const pca = list.find(p => p.id === editingPcaId) || {};
+            document.getElementById('edit-pca-name').value = pca.name || '';
+            editLightbox.classList.add('open');
+            return;
+        }
+        if (delBtn) {
+            const id = delBtn.dataset.id;
+            if (!confirm('Delete this PCA?')) return;
+            let list = getPCAs();
+            list = list.filter(p => p.id !== id);
+            savePCAs(list);
+            render();
+            return;
+        }
+        if (submitBtn) {
+            const id = submitBtn.dataset.id;
+            const list = getPCAs();
+            const pca = list.find(p => p.id === id);
+            if (pca) {
+                pca.status = 'Complete';
+                pca.lastModified = new Date().toISOString();
+                savePCAs(list);
+                render();
+            }
+            return;
+        }
+    });
+
+    // handle edit form
+    editForm.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        if (!editingPcaId) return;
+        const name = document.getElementById('edit-pca-name').value.trim() || 'Untitled PCA';
+        const list = getPCAs();
+        const pca = list.find(p => p.id === editingPcaId);
+        if (pca) {
+            pca.name = name;
+            pca.lastModified = new Date().toISOString();
+            savePCAs(list);
+            render();
+        }
+        editingPcaId = null;
+        editLightbox.classList.remove('open');
+    });
+
+    // close lightbox buttons
+    document.querySelectorAll('[data-closebtn]').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+            const target = btn.getAttribute('data-closebtn');
+            if (target) document.getElementById(target)?.classList.remove('open');
+            else editLightbox.classList.remove('open');
+        });
+    });
+
+    render();
+}
+
+function initPCAProjects() {
+    const params = new URLSearchParams(window.location.search);
+    let pcaId = params.get('pcaId');
+    // fallback to sessionStorage then localStorage if the link didn't include pcaId
+    const paramTaskNum = params.get('taskNum');
+    if (paramTaskNum) {
+        try { sessionStorage.setItem('taskNum', paramTaskNum); } catch (e) {}
+        try { localStorage.setItem('taskNum', paramTaskNum); } catch (e) {}
+    }
+    if (!pcaId) pcaId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
+    if (!pcaId) {
+        console.debug('initPCAProjects: no pcaId in URL or sessionStorage');
+        // show message in table body if available
+        const tableBodyFallback = document.querySelector('#pca-projects-tb tbody');
+        if (tableBodyFallback) tableBodyFallback.innerHTML = `<tr><td colspan="3">No PCA selected.</td></tr>`;
+        return;
+    }
+    const titleEl = document.getElementById('pca-title');
+    const editBtn = document.getElementById('edit-pca-name-btn');
+    const tableBody = document.querySelector('#pca-projects-tb tbody');
+    const addBtn = document.getElementById('add-new-project');
+    const countEl = document.getElementById('pca-project-count');
+    const editLightbox = document.getElementById('edit-pca-lightbox');
+    const editForm = document.getElementById('edit-pca-form');
+
+    function load() {
+        // populate header account info from stored task data (if any)
+        populateHeaderFromTask();
+        // Ensure session has taskNum so getPCAs reads the correct task-scoped key
+        if (!sessionStorage.getItem('taskNum') && localStorage.getItem('taskNum')) {
+            try { sessionStorage.setItem('taskNum', localStorage.getItem('taskNum')); } catch (e) {}
+        }
+        let list = getPCAs();
+        if ((!list || list.length === 0) && localStorage.getItem('taskNum')) {
+            try {
+                const fallbackKey = `pca_list_task_${localStorage.getItem('taskNum')}`;
+                const fallback = JSON.parse(localStorage.getItem(fallbackKey) || '[]');
+                if (fallback && fallback.length > 0) {
+                    list = fallback;
+                    try { savePCAs(list); } catch (e) {}
+                }
+            } catch (e) {}
+        }
+        let pca = list.find(p => p.id === pcaId);
+        if (!pca) {
+            // try fallback search across all task lists
+            pca = findPCAById(pcaId);
+            if (pca) console.debug('initPCAProjects: found PCA in fallback search');
+        }
+        // Extra fallback: if PCA found but has no projects, search all task-scoped lists for a matching PCA that does
+        if (pca && (!pca.projects || pca.projects.length === 0) && pcaId) {
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key || !key.startsWith('pca_list_task_')) continue;
+                    try {
+                        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                        const found = arr.find(p => p.id === pcaId && p.projects && p.projects.length > 0);
+                        if (found) {
+                            pca = found;
+                            console.debug('initPCAProjects: replaced PCA with one found in', key);
+                            break;
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                }
+            } catch (e) { console.warn('Error during PCA cross-key search', e); }
+        }
+        if (!pca) {
+            // If the PCA record isn't present, try using the session-stored name or localStorage as a fallback
+            const fallbackName = sessionStorage.getItem('currentPCAName') || localStorage.getItem('currentPCAName');
+            const pcaIdFallback = pcaId;
+            if (!fallbackName) {
+                tableBody.innerHTML = `<tr><td colspan="3">PCA not found.</td></tr>`;
+                return;
+            }
+            // create a minimal PCA-like object for display
+            pca = { id: pcaIdFallback, name: fallbackName, projects: [] };
+        }
+        // Ensure demo projects exist for this PCA (only once)
+        try { _ensureDemoProjectsForPCA(list, pcaId); } catch (e) { console.warn('Demo injection failed in projects page', e); }
+        // Also ensure across all task keys if currentPCA is stored elsewhere
+        try {
+            const currentId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
+            if (currentId) {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key || !key.startsWith('pca_list_task_')) continue;
+                    try {
+                        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                        const found = arr.find(p => p.id === currentId);
+                        if (found) {
+                            const changed = _ensureDemoProjectsForPCA(arr, currentId);
+                            if (changed) localStorage.setItem(key, JSON.stringify(arr));
+                        }
+                    } catch (e) {}
+                }
+            }
+        } catch (e) { console.warn('Demo injection fallback failed in projects page', e); }
+        titleEl.textContent = 'Pre-claim approval (PCA)';
+        // persist current PCA to session/local for downstream flows
+        try {
+            if (pca && pca.id) {
+                sessionStorage.setItem('currentPCA', pca.id);
+                sessionStorage.setItem('currentPCAName', pca.name || '');
+                localStorage.setItem('currentPCA', pca.id);
+                localStorage.setItem('currentPCAName', pca.name || '');
+            }
+        } catch (e) {}
+        // ensure the H4 shows the PCA name next to the edit button without replacing the button
+        const pcaNameH4 = document.getElementById('PCA-name');
+        if (pcaNameH4) {
+            let nameSpan = pcaNameH4.querySelector('.pca-name-text');
+            if (!nameSpan) {
+                nameSpan = document.createElement('span');
+                nameSpan.className = 'pca-name-text';
+                nameSpan.style.marginRight = '8px';
+                const btn = document.getElementById('edit-pca-name-btn');
+                if (btn) pcaNameH4.insertBefore(nameSpan, btn);
+                else pcaNameH4.appendChild(nameSpan);
+            }
+            nameSpan.textContent = pca.name || 'Untitled PCA';
+        }
+        countEl.textContent = (pca.projects || []).length;
+        tableBody.innerHTML = '';
+        if (!pca.projects || pca.projects.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="3">No projects have been added to this PCA.</td></tr>`;
+            return;
+        }
+        pca.projects.forEach((proj, idx) => {
+            const tr = document.createElement('tr');
+            const tdName = document.createElement('td');
+            tdName.textContent = proj.name || `Project ${idx+1}`;
+            const tdStatus = document.createElement('td');
+            tdStatus.textContent = proj.status || 'In progress';
+            const tdAction = document.createElement('td');
+            tdAction.innerHTML = `
+                <button class="btn-tertiary edit-project" data-index="${idx}" title="Edit"><span class="material-icons">edit</span></button>
+                <button class="btn-tertiary delete-project" data-index="${idx}" title="Delete"><span class="material-icons">close</span></button>
+            `;
+            tr.appendChild(tdName);
+            tr.appendChild(tdStatus);
+            tr.appendChild(tdAction);
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // edit PCA name
+    editBtn.addEventListener('click', () => {
+        const list = getPCAs();
+        const pca = list.find(p => p.id === pcaId) || {};
+        document.getElementById('edit-pca-name').value = pca.name || '';
+        editLightbox.classList.add('open');
+    });
+
+    editForm.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const name = document.getElementById('edit-pca-name').value.trim() || 'Untitled PCA';
+        const list = getPCAs();
+        const pca = list.find(p => p.id === pcaId);
+        if (pca) {
+            pca.name = name;
+            pca.lastModified = new Date().toISOString();
+            savePCAs(list);
+        }
+        editLightbox.classList.remove('open');
+        load();
+    });
+
+    // add new project -> launch stepper (index.html) with context stored
+    addBtn.addEventListener('click', () => {
+        // flag in sessionStorage for the stepper to know which PCA we're adding to
+        sessionStorage.setItem('currentPCA', pcaId);
+        sessionStorage.setItem('addingProject', 'true');
+        // indicate this navigation is intentional so reload-detection won't clear session
+        sessionStorage.setItem('navigatingToStepper', 'true');
+        // ensure selectedTask is present in sessionStorage (copy from localStorage fallback)
+        if (!sessionStorage.getItem('selectedTask') && localStorage.getItem('selectedTask')) {
+            sessionStorage.setItem('selectedTask', localStorage.getItem('selectedTask'));
+        }
+        if (!sessionStorage.getItem('taskNum') && localStorage.getItem('taskNum')) {
+            sessionStorage.setItem('taskNum', localStorage.getItem('taskNum'));
+        }
+        // set a persistent flag so the stepper page will accept navigation even if sessionStorage was cleared
+        try { localStorage.setItem('allowStepper', Date.now().toString()); } catch (e) {}
+        // navigate to stepper
+        window.location.href = 'index.html';
+    });
+
+    // delegate project actions
+    tableBody.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.edit-project');
+        const delBtn = e.target.closest('.delete-project');
+        if (editBtn) {
+            const idx = parseInt(editBtn.dataset.index, 10);
+            // Optionally open a project edit flow — for now prompt
+            const list = getPCAs();
+            const pca = list.find(p => p.id === pcaId);
+            const proj = pca.projects[idx];
+            const newName = prompt('Edit project name', proj.name || '');
+            if (newName !== null) {
+                proj.name = newName.trim() || proj.name;
+                pca.lastModified = new Date().toISOString();
+                savePCAs(list);
+                load();
+            }
+            return;
+        }
+        if (delBtn) {
+            const idx = parseInt(delBtn.dataset.index, 10);
+            if (!confirm('Delete this project?')) return;
+            const list = getPCAs();
+            const pca = list.find(p => p.id === pcaId);
+            pca.projects.splice(idx, 1);
+            pca.lastModified = new Date().toISOString();
+            savePCAs(list);
+            load();
+            return;
+        }
+    });
+
+    // close lightbox buttons
+    document.querySelectorAll('[data-closebtn]').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+            const target = btn.getAttribute('data-closebtn');
+            if (target) document.getElementById(target)?.classList.remove('open');
+            else editLightbox.classList.remove('open');
+        });
+    });
+
+    load();
+}
+
+// Auto-init PCA pages if present
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('pca-overview')) initPCAOverview();
+    if (document.getElementById('pca-projects')) initPCAProjects();
+});
+
+// Populate header account info on all pages if task data exists
+function populateHeaderFromTask() {
+    let raw = sessionStorage.getItem('selectedTask');
+    // fallback to localStorage if sessionStorage was not preserved across navigation
+    if (!raw) raw = localStorage.getItem('selectedTask');
+    if (!raw) return;
+    try {
+        const taskData = JSON.parse(raw);
+        if (!taskData) return;
+        const nameEl = document.getElementById('task-account-name');
+        const bn9El = document.getElementById('task-account-bn9');
+        const acct = taskData.accountInfo || {};
+        if (nameEl) nameEl.textContent = acct.businessName || taskData.businessName || '';
+        if (bn9El) bn9El.textContent = taskData.bn9 || acct.bn9 || acct.businessNumber || '';
+    } catch (e) {
+        console.warn('populateHeaderFromTask: invalid selectedTask');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', populateHeaderFromTask);
+
+/* Save the current stepper form as a project inside the PCA (if session flags set) */
+function saveCurrentProjectToPCA(markComplete = true) {
+    const currentPCA = sessionStorage.getItem('currentPCA');
+    const adding = sessionStorage.getItem('addingProject') === 'true';
+    if (!adding || !currentPCA) return false;
+
+    const list = getPCAs();
+    const pca = list.find(p => p.id === currentPCA);
+    if (!pca) return false;
+
+    // Build project object from current form fields
+    const now = new Date().toISOString();
+    const proj = {
+        id: _generateId('proj'),
+        name: (document.getElementById('projecttitle-field')?.value || '').trim() || 'Untitled project',
+        status: markComplete ? 'Complete' : 'In progress',
+        created: now,
+        lastModified: now,
+        data: {
+            startDate: document.getElementById('startDate')?.value || '',
+            projectLength: (document.querySelector('input[name="projectLength"]:checked')?.value) || '',
+            fieldOfResearch: document.getElementById('fieldofR-field')?.value || '',
+            categoryOfScience: document.getElementById('catofSci-field')?.value || '',
+            fieldOfScience: (document.getElementById('fieldofSci-field')?.selectedOptions[0]?.textContent) || '',
+            expenditure: document.getElementById('expenditure-field')?.value || '',
+            uncertainty: document.getElementById('uncertainty-tb')?.value || '',
+            duedilligence: document.getElementById('duedilligence-tb')?.value || '',
+            hypothesis: document.getElementById('hypothesis-tb')?.value || '',
+            solutions: document.getElementById('solutions-tb')?.value || '',
+            experiments: document.getElementById('experiments-tb')?.value || '',
+            factors: document.getElementById('factors-tb')?.value || '',
+            success: document.getElementById('success-tb')?.value || ''
+        }
+    };
+
+    pca.projects = pca.projects || [];
+    if (pca.projects.length >= 3) {
+        alert('This PCA already has the maximum of 3 projects.');
+        return false;
+    }
+
+    pca.projects.push(proj);
+    pca.lastModified = now;
+    savePCAs(list);
+
+    // Clear adding flags
+    sessionStorage.removeItem('addingProject');
+    sessionStorage.removeItem('currentPCA');
+
+    return true;
+}
+
+/* Auto-start PCA from chooser: if flagged, create a new PCA on overview load */
+function _handleAutoStartOnOverview() {
+    if (sessionStorage.getItem('autoStartPCA') === 'true') {
+        sessionStorage.removeItem('autoStartPCA');
+        // find overview start button and focus it (do NOT auto-click to avoid immediate navigation)
+        const startBtn = document.getElementById('start-new-pca');
+        if (startBtn) {
+            startBtn.focus();
+            // add a subtle highlight class if desired (CSS may not exist)
+            startBtn.classList.add('highlight-pulse');
+            // remove highlight after a short period
+            setTimeout(() => startBtn.classList.remove('highlight-pulse'), 1500);
+        }
+    }
+}
+
+// Hook auto-start when overview page loads
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('pca-overview')) {
+        // small timeout to ensure initPCAOverview has run
+        setTimeout(_handleAutoStartOnOverview, 100);
+    }
+});
+
+// Ensure project page header and PCA name use any session fallbacks early
+document.addEventListener('DOMContentLoaded', () => {
+    if (!document.getElementById('pca-projects')) return;
+    // populate header from task data if available
+    populateHeaderFromTask();
+    // set PCA name if available from session fallback
+    const fallbackName = sessionStorage.getItem('currentPCAName');
+    if (fallbackName) {
+        const pcaNameH4 = document.getElementById('PCA-name');
+        if (pcaNameH4) {
+            let nameSpan = pcaNameH4.querySelector('.pca-name-text');
+            if (!nameSpan) {
+                nameSpan = document.createElement('span');
+                nameSpan.className = 'pca-name-text';
+                nameSpan.style.marginRight = '8px';
+                const btn = document.getElementById('edit-pca-name-btn');
+                if (btn) pcaNameH4.insertBefore(nameSpan, btn);
+                else pcaNameH4.appendChild(nameSpan);
+            }
+            nameSpan.textContent = fallbackName;
+            console.debug('PCA name set from session fallback:', fallbackName);
+        }
+    }
+});
+
+// Also attempt to set the PCA name immediately in case DOMContentLoaded already fired earlier
+(function immediatePCANameSet() {
+    if (!document.getElementById('pca-projects')) return;
+    const fallbackName = sessionStorage.getItem('currentPCAName');
+    if (!fallbackName) return;
+    const pcaNameH4 = document.getElementById('PCA-name');
+    if (!pcaNameH4) return;
+    let nameSpan = pcaNameH4.querySelector('.pca-name-text');
+    if (!nameSpan) {
+        nameSpan = document.createElement('span');
+        nameSpan.className = 'pca-name-text';
+        nameSpan.style.marginRight = '8px';
+        const btn = document.getElementById('edit-pca-name-btn');
+        if (btn) pcaNameH4.insertBefore(nameSpan, btn);
+        else pcaNameH4.appendChild(nameSpan);
+    }
+    nameSpan.textContent = fallbackName;
+    console.debug('Immediate PCA name set from session fallback:', fallbackName);
+})();

@@ -41,7 +41,7 @@
 
 		</div>
 		<main class="stepper">
-			<section class="step" id="step-0">
+			<section class="step active" id="step-0">
 				<div class="step-header">
 					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
 					<h2>Before you begin</h2> </div>
@@ -93,16 +93,22 @@
 							</ul>
 						</div><br>
 						<div class="group">
-							<input type="checkbox" id="certif-criteria" name="certif-criteria" value="I certify that I verified and meet all the criteria for pre-claim approval. Upon receipt of your Pre-claim approval application CRA will verify these requirements and if your business does not meet the requirements your application may not be processed.  If you are unable to answer or unsure of your standing it is recommended that your contact CRA for confirmation and we can confirm if your business meets requirements before you proceed." data-toggle="">
-											<label for="certif-criteria"></label>
-										</div>
+							<input type="checkbox" id="certif-criteria" name="certif-criteria" value="accepted" data-toggle="">
+	                		<label for="certif-criteria" data-preserve="true">
+								I certify that I verified and meet all the 
+								<a href="#" class="external-link" target="_blank" rel="noopener">criteria for pre-claim approval<span class="material-icons external-icon">open_in_new</span></a>
+								for pre-claim approval. Upon receipt of your Pre-claim approval application CRA will verify these requirements and if your business does not meet the requirements your application may not be processed.  If you are unable to answer or unsure of your standing it is recommended that you 
+								<a href="#" class="external-link" target="_blank" rel="noopener">contact the CRA for confirmation<span class="material-icons external-icon">open_in_new</span></a>
+								before you proceed.
+							</label>
+						</div>
 						<div class="btn-container">
 							<button class="btn btn-primary next-button" type="button">Begin</button>
 						</div>
 					</div>
 				</div>
 			</section>
-			<section class="step active" id="step-1">
+			<section class="step" id="step-1">
 				<div class="step-header">
 					<div class="step-number"> <span class="step-icon material-icons">check</span> </div>
 					<h2>Provide project information</h2> </div>
@@ -356,18 +362,20 @@
 						<strong>Note:</strong> Once the PCA is saved, documents cannot be edited or deleted. 
 						<h5>Documents that have been saved to this PCA</h5>   
 						<table id="pastsesh-upload-tb" class="table dynamic-table" cellpadding="0" cellspacing="0" required>
-									<thead>
-										<tr>
-											<th>File name</th>
-											<th>Description</th>
-											<th>File size</th>
-											<th>Actions</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr>You have no documents saved to this PCA.</tr>
-									</tbody>
-								</table>
+							<thead>
+								<tr>
+									<th>File name</th>
+									<th>Description</th>
+									<th>Date uploaded</th>
+									<th>File size</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr class="no-docs-row">
+									<td colspan="4" class="no-docs-cell">You have no documents saved to this PCA.</td>
+								</tr>
+							</tbody>
+						</table>
 
 							<div class="btn-container">
 								<button class="btn btn-secondary back-button" type="button">Back</button>
@@ -387,7 +395,7 @@
                                     <br>
                                     <label for="s5lb-upload" class="required-label">Upload your document</label>
                                     Allowable file types: .pdf, .doc, .docx, .xls, .xlsx, .rtf, .txt, .jpg, .jpeg, .tiff, .tif, .xps
-                                    <br><button id="s5-browsebtn" type="button" class="btn-secondary">Browse</button>
+                                    <br><br><button id="s5-browsebtn" type="button" class="btn-secondary">Browse</button>
                                     <span class="fileName" id="s5-filename-display" data-formelement data-placeholder="No file chosen.">No file chosen.</span>
 
                                     <input type="hidden" id="s5-filename" name="s5-filename">
