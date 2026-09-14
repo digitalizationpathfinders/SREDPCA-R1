@@ -30,8 +30,9 @@ body {
 
 }
 
-textarea {
+textarea, input {
   font-family:var(--font-base);
+  font-size:16px;
   padding:8px;
 }
 
@@ -538,6 +539,7 @@ padding:8px;
   font-size:16px !important;
 }
 input[type="text"],
+input[type="decimal"],
 select,
 textarea {
   border: 1px solid var(--main-grey);
@@ -598,6 +600,8 @@ fieldset {
   font-weight:normal;
   border:0;
   margin:24px 0px;
+  margin-top:0px;
+
 }
 
 label, legend {
@@ -652,6 +656,12 @@ label span, legend span {
   font-size:16px;
   margin-right:8px;
   font-weight:normal !important;
+}
+
+.standard-input select,
+.standard-input input,
+.standard-input textarea {
+  margin-left:16px;
 }
 /* FLOATING INPUTS */
 .floating-input {
@@ -862,6 +872,25 @@ font: 16px var(--font-base);
   align-items: center;
   display: flex;
   max-width:20px;
+}
+
+/* Money input with static dollar prefix inside the field */
+.money-field {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.money-field input {
+  padding-left: 32px; /* space for the $ */
+}
+.money-field .money-prefix {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #444;
+  font-weight: 600;
 }
 
 
@@ -1228,6 +1257,15 @@ font: 16px var(--font-base);
     margin-left:16px;
     text-align: right;
     width:100%;
+}
+
+.char-counter.limit-reached {
+  color: var(--error);
+  font-weight: 600;
+}
+
+textarea.limit-reached, input.limit-reached {
+  border: 1px solid var(--error) !important;
 }
 
 .review-table th,

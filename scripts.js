@@ -147,6 +147,8 @@ class Stepper {
             
         }
     
+            
+
         DataManager.saveData(`stepData_${stepNum}`, dataObj);
     }
 
@@ -206,13 +208,12 @@ class Step1Handler {
     constructor() {
         this.accountInfoPanelContainer = document.getElementById("accountinfo-panel-container");
         this.accountInfo = DataManager.getData("accountInfo") || null;
-
+        this.anticipatedDate = new DatepickerObj("startDate");
         this.populateInfoPanel();
         
     }
     populateInfoPanel(){
         
-        console.log(this.accountInfo);
         new PanelObj({
             container: this.accountInfoPanelContainer,
             title: "Information on file",
@@ -496,8 +497,9 @@ class Step5Handler {
 }
 
 class CharacterCounter {
-    constructor(textarea) {
+    constructor(textarea, mode = 'chars') {
         this.textarea = textarea;
+        this.mode = mode === 'words' ? 'words' : 'chars';
         this.maxLength = parseInt(textarea.dataset.maxlength, 10) || null;
 
         this.counterEl = document.createElement("div");
@@ -507,19 +509,160 @@ class CharacterCounter {
 
         this.updateCount();
 
-        textarea.addEventListener("input", () => {
-            this.updateCount();
-        });
+        // Use a bound handler so we can enforce limits on input/paste
+        this._boundInputHandler = this.handleInput.bind(this);
+        textarea.addEventListener("input", this._boundInputHandler);
+        // Prevent further key input when at limit
+        this._boundKeydownHandler = this._handleKeydown.bind(this);
+        textarea.addEventListener('keydown', this._boundKeydownHandler);
+        // Handle paste specially to truncate before insertion
+        this._boundPasteHandler = this._handlePaste.bind(this);
+        textarea.addEventListener('paste', this._boundPasteHandler);
+    }
+
+    _getWordCount() {
+        const text = (this.textarea.value || '').trim();
+        return text === '' ? 0 : text.split(/\s+/).filter(w => w.length > 0).length;
+    }
+
+    _handleKeydown(e) {
+        if (!this.maxLength) return;
+        // allow modifier combos
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        const navKeys = ['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Tab','Enter'];
+        if (navKeys.includes(e.key)) return;
+
+        const selStart = this.textarea.selectionStart;
+        const selEnd = this.textarea.selectionEnd;
+        const selLen = selEnd - selStart;
+
+        if (this.mode === 'chars') {
+            const currLen = this.textarea.value.length;
+            // if no selection and already at or over limit, block printable keys
+            if (selLen === 0 && currLen >= this.maxLength) {
+                e.preventDefault();
+            }
+            // if replacing selection, allow as long as replacement won't exceed limit
+            if (selLen > 0) {
+                const allowed = this.maxLength - (currLen - selLen);
+                if (allowed <= 0) {
+                    e.preventDefault();
+                }
+            }
+        } else {
+            // words mode: block if already at max and not replacing selection
+            const currWords = this._getWordCount();
+            if (selLen === 0 && currWords >= this.maxLength) {
+                // block printable characters and space
+                if (e.key.length === 1 || e.key === ' ') {
+                    e.preventDefault();
+                }
+            }
+        }
+    }
+
+    _handlePaste(e) {
+        if (!this.maxLength) return;
+        const paste = (e.clipboardData || window.clipboardData).getData('text') || '';
+        const selStart = this.textarea.selectionStart;
+        const selEnd = this.textarea.selectionEnd;
+        const selText = this.textarea.value.substring(selStart, selEnd);
+
+        if (this.mode === 'chars') {
+            const currLen = this.textarea.value.length;
+            const allowed = this.maxLength - (currLen - selText.length);
+            if (allowed <= 0) {
+                e.preventDefault();
+                return;
+            }
+            if (paste.length > allowed) {
+                e.preventDefault();
+                const insert = paste.substring(0, allowed);
+                this._insertAtSelection(insert);
+            }
+        } else {
+            const pasteWords = paste.trim() === '' ? [] : paste.trim().split(/\s+/).filter(w => w.length > 0);
+            const currWords = this._getWordCount();
+            const selWords = selText.trim() === '' ? 0 : selText.trim().split(/\s+/).filter(w => w.length > 0).length;
+            const allowed = this.maxLength - (currWords - selWords);
+            if (allowed <= 0) {
+                e.preventDefault();
+                return;
+            }
+            if (pasteWords.length > allowed) {
+                e.preventDefault();
+                const insert = pasteWords.slice(0, allowed).join(' ');
+                this._insertAtSelection(insert);
+            }
+        }
+    }
+
+    _insertAtSelection(insertText) {
+        const start = this.textarea.selectionStart;
+        const end = this.textarea.selectionEnd;
+        const value = this.textarea.value;
+        this.textarea.value = value.slice(0, start) + insertText + value.slice(end);
+        const pos = start + insertText.length;
+        this.textarea.selectionStart = this.textarea.selectionEnd = pos;
+        this.updateCount();
     }
 
     updateCount() {
-        const currentLength = this.textarea.value.length;
-
-        if (this.maxLength) {
-            this.counterEl.textContent = `${currentLength} / ${this.maxLength} characters`;
+        if (this.mode === 'words') {
+            const text = (this.textarea.value || '').trim();
+            const wordCount = text === '' ? 0 : text.split(/\s+/).filter(w => w.length > 0).length;
+            if (this.maxLength) {
+                this.counterEl.textContent = `${wordCount} / ${this.maxLength} words`;
+            } else {
+                this.counterEl.textContent = `${wordCount} words`;
+            }
         } else {
-            this.counterEl.textContent = `${currentLength} characters`;
+            const currentLength = this.textarea.value.length;
+            if (this.maxLength) {
+                this.counterEl.textContent = `${currentLength} / ${this.maxLength} characters`;
+            } else {
+                this.counterEl.textContent = `${currentLength} characters`;
+            }
         }
+        // visual state when at limit
+        const reached = this.maxLength && ((this.mode === 'words' && this._getWordCount() >= this.maxLength) || (this.mode === 'chars' && this.textarea.value.length >= this.maxLength));
+        if (reached) {
+            this.counterEl.classList.add('limit-reached');
+            this.textarea.classList.add('limit-reached');
+        } else {
+            this.counterEl.classList.remove('limit-reached');
+            this.textarea.classList.remove('limit-reached');
+        }
+    }
+
+    handleInput() {
+        if (!this.maxLength) {
+            this.updateCount();
+            return;
+        }
+
+        if (this.mode === 'words') {
+            const text = (this.textarea.value || '').trim();
+            if (text === '') {
+                this.updateCount();
+                return;
+            }
+            const words = text.split(/\s+/).filter(w => w.length > 0);
+            if (words.length > this.maxLength) {
+                const truncated = words.slice(0, this.maxLength).join(' ');
+                this.textarea.value = truncated;
+                // move cursor to end
+                this.textarea.selectionStart = this.textarea.selectionEnd = this.textarea.value.length;
+            }
+        } else {
+            if (this.textarea.value.length > this.maxLength) {
+                this.textarea.value = this.textarea.value.substring(0, this.maxLength);
+                this.textarea.selectionStart = this.textarea.selectionEnd = this.textarea.value.length;
+            }
+        }
+
+        this.updateCount();
     }
 }
 
@@ -1400,6 +1543,300 @@ class ProgressiveDisclosure {
 
 }
 
+// Science categories and fields data (labels with codes placed in brackets at the end)
+const SCIENCE_DATA = {
+    "Natural and formal sciences": {
+        "Mathematics": [
+            { code: "1.01.01", label: "Pure mathematics" },
+            { code: "1.01.02", label: "Applied mathematics" },
+            { code: "1.01.03", label: "Statistics and probability" }
+        ],
+        "Computer and information sciences": [
+            { code: "1.02.01", label: "Computer sciences" },
+            { code: "1.02.02", label: "Information technology and bioinformatics" }
+        ],
+        "Physical sciences": [
+            { code: "1.03.01", label: "Atomic, molecular, and chemical physics" },
+            { code: "1.03.02", label: "Interaction with radiation" },
+            { code: "1.03.03", label: "Magnetic resonances" },
+            { code: "1.03.04", label: "Condensed matter physics" },
+            { code: "1.03.05", label: "Solid state physics and superconductivity" },
+            { code: "1.03.06", label: "Particles and fields physics" },
+            { code: "1.03.07", label: "Nuclear physics" },
+            { code: "1.03.08", label: "Fluids and plasma physics (including surface physics)" },
+            { code: "1.03.09", label: "Optics (including laser optics and quantum optics)" },
+            { code: "1.03.10", label: "Acoustics" },
+            { code: "1.03.11", label: "Astronomy (including astrophysics space science)" }
+        ],
+        "Chemical sciences": [
+            { code: "1.04.01", label: "Organic chemistry" },
+            { code: "1.04.02", label: "Inorganic and nuclear chemistry" },
+            { code: "1.04.03", label: "Physical chemistry, polymer science, and plastics" },
+            { code: "1.04.04", label: "Electrochemistry (dry cells, batteries, fuel cells, metal corrosion, electrolysis)" },
+            { code: "1.04.05", label: "Colloid chemistry" },
+            { code: "1.04.06", label: "Analytical chemistry" }
+        ],
+        "Earth and related Environmental sciences": [
+            { code: "1.05.01", label: "Geosciences, multidisciplinary" },
+            { code: "1.05.02", label: "Mineralogy and palaeontology" },
+            { code: "1.05.03", label: "Geochemistry and geophysics" },
+            { code: "1.05.04", label: "Physical geography" },
+            { code: "1.05.05", label: "Geology and volcanology" },
+            { code: "1.05.06", label: "Environmental sciences" },
+            { code: "1.05.07", label: "Meteorology, atmospheric sciences, and climatic research" },
+            { code: "1.05.08", label: "Oceanography, hydrology, and water resources" }
+        ],
+        "Biological sciences": [
+            { code: "1.06.01", label: "Cell biology, microbiology, and virology" },
+            { code: "1.06.02", label: "Biochemistry, molecular biology, and Biochemical research" },
+            { code: "1.06.03", label: "Mycology" },
+            { code: "1.06.04", label: "Biophysics" },
+            { code: "1.06.05", label: "Genetics and heredity" },
+            { code: "1.06.06", label: "Reproductive biology" },
+            { code: "1.06.07", label: "Developmental biology" },
+            { code: "1.06.08", label: "Plant sciences and botany" },
+            { code: "1.06.09", label: "Zoology, ornithology, entomology, and behavioural sciences biology" },
+            { code: "1.06.10", label: "Marine biology, freshwater biology, and limnology" },
+            { code: "1.06.11", label: "Ecology and biodiversity conservation" },
+            { code: "1.06.12", label: "Biology (theoretical, thermal, cryobiology, biological rhythm)" },
+            { code: "1.06.13", label: "Evolutionary biology" }
+        ],
+        "Other natural sciences": [
+            { code: "1.07.01", label: "Other natural sciences" }
+        ]
+    },
+    "Engineering and technology": {
+        "Civil engineering": [
+            { code: "2.01.01", label: "Civil engineering" },
+            { code: "2.01.02", label: "Architecture engineering" },
+            { code: "2.01.03", label: "Municipal and structural engineering" },
+            { code: "2.01.04", label: "Transport engineering" }
+        ],
+        "Electrical engineering, Electronic engineering, and Information technology": [
+            { code: "2.02.01", label: "Electrical and electronic engineering" },
+            { code: "2.02.02", label: "Robotics and automatic control" },
+            { code: "2.02.03", label: "Micro-electronics" },
+            { code: "2.02.04", label: "Semiconductors" },
+            { code: "2.02.05", label: "Automation and control systems" },
+            { code: "2.02.06", label: "Communication engineering and systems" },
+            { code: "2.02.07", label: "Telecommunications" },
+            { code: "2.02.08", label: "Computer hardware and architecture" },
+            { code: "2.02.09", label: "Software engineering and technology" }
+        ],
+        "Mechanical engineering": [
+            { code: "2.03.01", label: "Mechanical engineering" },
+            { code: "2.03.02", label: "Applied mechanics" },
+            { code: "2.03.03", label: "Thermodynamics" },
+            { code: "2.03.04", label: "Aerospace engineering" },
+            { code: "2.03.05", label: "Nuclear related engineering" },
+            { code: "2.03.06", label: "Acoustical engineering" },
+            { code: "2.03.07", label: "Reliability analysis and non-destructive testing" },
+            { code: "2.03.08", label: "Automotive and transportation engineering and manufacturing" },
+            { code: "2.03.09", label: "Tooling, machinery, and equipment engineering and manufacturing" },
+            { code: "2.03.10", label: "Heating, ventilation, and Air conditioning engineering and manufacturing" }
+        ],
+        "Chemical engineering": [
+            { code: "2.04.01", label: "Chemical engineering (plants, products)" },
+            { code: "2.04.02", label: "Chemical process engineering" }
+        ],
+        "Materials engineering": [
+            { code: "2.05.01", label: "Materials engineering and metallurgy" },
+            { code: "2.05.02", label: "Ceramics" },
+            { code: "2.05.03", label: "Coating and films (including packaging and printing)" },
+            { code: "2.05.04", label: "Plastics, Rubber, and Composites (including laminates and reinforced plastics)" },
+            { code: "2.05.05", label: "Paper and wood and textiles" },
+            { code: "2.05.06", label: "Construction materials (organic and inorganic)" }
+        ],
+        "Medical engineering": [
+            { code: "2.06.01", label: "Medical and biomedical engineering" },
+            { code: "2.06.02", label: "Medical laboratory technology" }
+        ],
+        "Environmental engineering": [
+            { code: "2.07.01", label: "Environmental and geological engineering" },
+            { code: "2.07.02", label: "Petroleum engineering (fuel, oils)" },
+            { code: "2.07.03", label: "Energy and fuels" },
+            { code: "2.07.04", label: "Remote sensing" },
+            { code: "2.07.05", label: "Mining and mineral processing" },
+            { code: "2.07.06", label: "Marine engineering, sea vessels, and ocean engineering" }
+        ],
+        "Environmental biotechnology": [
+            { code: "2.08.01", label: "Environmental biotechnology" },
+            { code: "2.08.02", label: "Bioremediation" },
+            { code: "2.08.03", label: "Diagnostic biotechnologies in environmental management" }
+        ],
+        "Industrial biotechnology": [
+            { code: "2.09.01", label: "Industrial biotechnology" },
+            { code: "2.09.02", label: "Bioprocessing technologies" },
+            { code: "2.09.03", label: "Biocatalysis and fermentation" },
+            { code: "2.09.04", label: "Bioproducts" },
+            { code: "2.09.05", label: "Biomaterials" }
+        ],
+        "Nano-technology": [
+            { code: "2.10.01", label: "Nano-materials (production and properties)" },
+            { code: "2.10.02", label: "Nano-processes (applications on nano-scale)" }
+        ],
+        "Other engineering and technologies": [
+            { code: "2.11.01", label: "Food and beverages" },
+            { code: "2.11.02", label: "Oenology" },
+            { code: "2.11.03", label: "Other engineering and technologies" }
+        ]
+    },
+    "Medical and Health sciences": {
+        "Basic medicine": [
+            { code: "3.01.01", label: "Anatomy and morphology" },
+            { code: "3.01.02", label: "Human genetics" },
+            { code: "3.01.03", label: "Immunology" },
+            { code: "3.01.04", label: "Neurosciences" },
+            { code: "3.01.05", label: "Pharmacology and pharmacy and medicinal chemistry" },
+            { code: "3.01.06", label: "Toxicology" },
+            { code: "3.01.07", label: "Physiology and cytology" },
+            { code: "3.01.08", label: "Pathology" }
+        ],
+        "Clinical medicine": [
+            { code: "3.02.01", label: "Andrology" },
+            { code: "3.02.02", label: "Obstetrics and gynaecology" },
+            { code: "3.02.03", label: "Paediatrics" },
+            { code: "3.02.04", label: "Cardiac and cardiovascular systems" },
+            { code: "3.02.05", label: "Haematology" },
+            { code: "3.02.06", label: "Anaesthesiology" },
+            { code: "3.02.07", label: "Orthopaedics" },
+            { code: "3.02.08", label: "Radiology and nuclear medicine" },
+            { code: "3.02.09", label: "Dentistry, oral surgery, and medicine" },
+            { code: "3.02.10", label: "Dermatology, venereal diseases, and allergy" },
+            { code: "3.02.11", label: "Rheumatology" },
+            { code: "3.02.12", label: "Endocrinology and metabolism and gastroenterology" },
+            { code: "3.02.13", label: "Urology and nephrology" },
+            { code: "3.02.14", label: "Oncology" }
+        ],
+        "Health sciences": [
+            { code: "3.03.01", label: "Health care sciences and nursing" },
+            { code: "3.03.02", label: "Nutrition and dietetics" },
+            { code: "3.03.03", label: "Parasitology" },
+            { code: "3.03.04", label: "Infectious diseases and epidemiology" },
+            { code: "3.03.05", label: "Occupational health" }
+        ],
+        "Medical biotechnology": [
+            { code: "3.04.01", label: "Health-related biotechnology" },
+            { code: "3.04.02", label: "Technologies involving the manipulation of cells, tissues, organs, or the whole organism" },
+            { code: "3.04.03", label: "Technologies involving identifying the functioning of DNA, proteins, and enzymes" },
+            { code: "3.04.04", label: "Pharmacogenomics, gene-based therapeutics" },
+            { code: "3.04.05", label: "Biomaterials" }
+        ],
+        "Other medical sciences": [
+            { code: "3.05.01", label: "Forensic science" },
+            { code: "3.05.02", label: "Other medical sciences" }
+        ]
+    },
+    "Agricultural sciences": {
+        "Agriculture, Forestry, and Fisheries Veterinary science": [
+            { code: "4.01.01", label: "Agriculture" },
+            { code: "4.01.02", label: "Forestry" },
+            { code: "4.01.03", label: "Fisheries and Aquaculture" },
+            { code: "4.01.04", label: "Soil science" },
+            { code: "4.01.05", label: "Horticulture" },
+            { code: "4.01.06", label: "Viticulture" },
+            { code: "4.01.07", label: "Agronomy" },
+            { code: "4.01.08", label: "Plant breeding and plant protection" }
+        ],
+        "Animal and dairy science": [
+            { code: "4.02.01", label: "Animal and Dairy science" },
+            { code: "4.02.02", label: "Animal husbandry" }
+        ],
+        "Veterinary science": [
+            { code: "4.03.01", label: "Veterinary science (all)" }
+        ],
+        "Agricultural biotechnology": [
+            { code: "4.04.01", label: "Agricultural biotechnology and food biotechnology" },
+            { code: "4.04.02", label: "Genetically Modified (GM) organism technology and livestock cloning" },
+            { code: "4.04.03", label: "Diagnostics (DNA chips and biosensing devices)" },
+            { code: "4.04.04", label: "Biomass feedstock production technologies" },
+            { code: "4.04.05", label: "Biopharming" }
+        ],
+        "Other agricultural sciences": [
+            { code: "4.05.01", label: "Other agricultural sciences" }
+        ]
+    }
+};
+
+function populateCategoryDropdowns() {
+    const categories = Object.keys(SCIENCE_DATA);
+    const fieldOfR = document.getElementById('fieldofR-field');
+    const catSel = document.getElementById('catofSci-field');
+    if (fieldOfR) {
+        fieldOfR.innerHTML = '';
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.selected = true;
+        defaultOpt.textContent = '(Select)';
+        fieldOfR.appendChild(defaultOpt);
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            fieldOfR.appendChild(opt);
+        });
+    }
+    // Reset category select until a Field of Research is chosen
+    if (catSel) {
+        catSel.innerHTML = '';
+        const defaultOpt2 = document.createElement('option');
+        defaultOpt2.value = '';
+        defaultOpt2.selected = true;
+        defaultOpt2.textContent = '(Select)';
+        catSel.appendChild(defaultOpt2);
+    }
+}
+
+function populateCatForFieldOfResearch(parent) {
+    const catSel = document.getElementById('catofSci-field');
+    const fieldSel = document.getElementById('fieldofSci-field');
+    if (!catSel) return;
+    catSel.innerHTML = '';
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.selected = true;
+    defaultOpt.textContent = '(Select)';
+    catSel.appendChild(defaultOpt);
+    if (!parent || !SCIENCE_DATA[parent]) return;
+    Object.keys(SCIENCE_DATA[parent]).forEach(subcat => {
+        const opt = document.createElement('option');
+        opt.value = subcat;
+        opt.textContent = subcat;
+        opt.dataset.parent = parent;
+        catSel.appendChild(opt);
+    });
+    // clear fieldofSci
+    if (fieldSel) {
+        fieldSel.innerHTML = '';
+        const d = document.createElement('option');
+        d.value = '';
+        d.selected = true;
+        d.textContent = '(Select)';
+        fieldSel.appendChild(d);
+    }
+}
+
+function populateFieldsForCategory(parent, subcat) {
+    const fieldSel = document.getElementById('fieldofSci-field');
+    if (!fieldSel) return;
+    fieldSel.innerHTML = '';
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.selected = true;
+    defaultOpt.textContent = '(Select)';
+    fieldSel.appendChild(defaultOpt);
+    if (!parent || !subcat || !SCIENCE_DATA[parent] || !SCIENCE_DATA[parent][subcat]) return;
+    SCIENCE_DATA[parent][subcat].forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.code;
+        opt.textContent = `${item.label} (${item.code})`;
+        opt.dataset.parent = parent;
+        opt.dataset.subcat = subcat;
+        opt.dataset.code = item.code;
+        fieldSel.appendChild(opt);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     let taskData = sessionStorage.getItem("selectedTask");
@@ -1456,8 +1893,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.querySelectorAll("textarea[data-maxlength]").forEach(textarea => {
-        new CharacterCounter(textarea);
+        const mode = textarea.dataset.count === 'words' ? 'words' : 'chars';
+        new CharacterCounter(textarea, mode);
     });
+
+    // Initialize dynamic category and field dropdowns
+    populateCategoryDropdowns();
+    const catSelect = document.getElementById('catofSci-field');
+    const fieldOfRSelect = document.getElementById('fieldofR-field');
+    const fieldOfSciSelect = document.getElementById('fieldofSci-field');
+
+    if (fieldOfRSelect) {
+        fieldOfRSelect.addEventListener('change', (e) => {
+            const selectedParent = e.target.value;
+            populateCatForFieldOfResearch(selectedParent);
+        });
+    }
+
+    if (catSelect) {
+        catSelect.addEventListener('change', (e) => {
+            const selectedSubcat = e.target.value;
+            const parent = e.target.selectedOptions[0]?.dataset?.parent || '';
+            // ensure parent select matches
+            if (fieldOfRSelect && parent) fieldOfRSelect.value = parent;
+            populateFieldsForCategory(parent, selectedSubcat);
+        });
+        // If there is a pre-selected category, populate fields accordingly
+        if (catSelect.value) {
+            const preParent = catSelect.selectedOptions[0]?.dataset?.parent || '';
+            populateFieldsForCategory(preParent, catSelect.value);
+        }
+    }
+
+    if (fieldOfSciSelect) {
+        fieldOfSciSelect.addEventListener('change', (e) => {
+            const selectedOpt = e.target.selectedOptions[0];
+            if (!selectedOpt) return;
+            const parent = selectedOpt.dataset.parent;
+            const subcat = selectedOpt.dataset.subcat;
+            if (fieldOfRSelect && parent) fieldOfRSelect.value = parent;
+            if (catSelect && subcat) catSelect.value = subcat;
+        });
+    }
 
 
 

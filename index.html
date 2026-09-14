@@ -116,10 +116,10 @@
 							<fieldset id="projecttitle-fieldset" class="standard-input">
 								<label class="required-label" for="projecttitle-field">Project title </a>
 								</label>
-								<input id="projecttitle-field" type="text" class="half-width ml-16px">
+								<input id="projecttitle-field" type="text" class="threequarter-width ml-16px">
 							</fieldset>
 
-								<fieldset id="startDate-fieldset" class="ml-16px threequarter-width">
+								<fieldset id="startDate-fieldset" class="ml-16px floating-input threequarter-width">
 									<input class="" type="text" id="startDate" name="startDate" placeholder=" ">
 									<label for="startDate" class="required-label">Anticipated project start date</label>
 									<div class="suffix"> <span class="material-icons">calendar_month</span> </div>
@@ -147,42 +147,30 @@
 								<div class="alert warning hidden" id="alert-more3y"> <span class="material-icons">warning</span>
 										<div class="alert-content">The Pre-Claim Approval (PCA) can only provide approval for a maximum of 3 years. Details on the approval period will be sent to you once your application has been processed. </div>
 								</div>
-								<fieldset id="fieldofR-fieldset">
+								<fieldset id="fieldofR-fieldset" class="standard-input">
 									 <label class="required-label" for="fieldofR-field">Select the field of research for your project </label>                        
 									<select id="fieldofR-field" name="fieldofR-field">
 										<option value="" selected>(Select)</option>
-										<option value="Natural and formal sciences">Natural and formal sciences</option>
-										<option value="Engineering and technology">Engineering and technology</option>
-										<option value="Medical and Health sciences">Medical and Health sciences</option>
-										<option value="Agricultural sciences">Agricultural sciences</option>
 									</select>
 								</fieldset>
-								<fieldset id="catofSci-fieldset">
+								<fieldset id="catofSci-fieldset" class="standard-input">
 									 <label class="required-label" for="catofSci-field">Select the category of science or technology for your project   </label>                        
 									<select id="catofSci-field" name="catofSci-field">
 										<option value="" selected>(Select)</option>
-										<option value="Natural and formal sciences">Natural and formal sciences</option>
-										<option value="Engineering and technology">Engineering and technology</option>
-										<option value="Medical and Health sciences">Medical and Health sciences</option>
-										<option value="Agricultural sciences">Agricultural sciences</option>
 									</select>
 								</fieldset>
-								<fieldset id="fieldofSci-fieldset">
+								<fieldset id="fieldofSci-fieldset" class="standard-input">
 									 <label class="required-label" for="fieldofSci-field">Select the field of science or technology for your project </label>                        
 									<select id="fieldofSci-field" name="fieldofSci-field">
 										<option value="" selected>(Select)</option>
-										<option value="Natural and formal sciences">Statistics and probability (1.01.03)</option>
-										<option value="Engineering and technology">Engineering and technology</option>
-										<option value="Medical and Health sciences">Medical and Health sciences</option>
-										<option value="Agricultural sciences">Agricultural sciences</option>
 									</select>
 								</fieldset>
-								<fieldset id="expenditure-fieldset" class="full-width">
+								<fieldset id="expenditure-fieldset" class="standard-input threequarter-width">
 									<label for="expenditure-field" class="required-label">Estimate the total SR&ED expenditures</label>
-									<input class="" type="text" id="expenditure-field" name="expenditure" placeholder=" ">
-									
-									<div class="prefix"> <span class="material-icons">dollar</span> </div>
-								
+									<div class="money-field">
+										<span class="money-prefix">$</span>
+										<input class="" type="decimal" id="expenditure-field" name="expenditure" placeholder="0.00">
+									</div>
 								</fieldset>
 							
 						
@@ -217,7 +205,7 @@
 										<li>Describe what would be the really cool thing that you figured out that no one else has or knows.</li>
 										</ol>
 								</span>
-								<textarea class="lg-textarea ml-16px" id="uncertainty-tb" data-maxlength="500"></textarea>
+								<textarea class="lg-textarea ml-16px" id="uncertainty-tb" data-maxlength="500" data-count="words"></textarea>
 							</fieldset>
 							
 							<div class="btn-container">
@@ -250,7 +238,7 @@
 										<li>A description of any initial evaluations or testing that have been done.</li>
 										</ol>
 								</span>
-								<textarea class="lg-textarea ml-16px" id="duedilligence-tb" data-maxlength="700"></textarea>
+								<textarea class="lg-textarea ml-16px" id="duedilligence-tb" data-maxlength="700" data-count="words"></textarea>
 							</fieldset>
 							<div class="btn-container">
 								<button class="btn btn-secondary back-button" type="button">Back</button>
@@ -272,26 +260,26 @@
 							<fieldset id="hypothesis-fieldset" class="standard-input">
 								<legend class="required-label">What is your hypothesis? (180 words)</legend>
 								
-								<textarea class="md-tb ml-16px" id="hypothesis-tb" data-maxlength="180"></textarea>
+								<textarea class="md-tb ml-16px" id="hypothesis-tb" data-maxlength="180" data-count="words"></textarea>
 							</fieldset>
 							<fieldset id="solutions-fieldset" class="standard-input">
 								<legend class="required-label">What approaches or solutions do you plan to investigate? (180 words)</legend>
 								
-								<textarea class="md-tb ml-16px" id="solutions-tb" data-maxlength="180"></textarea>
+								<textarea class="md-tb ml-16px" id="solutions-tb" data-maxlength="180" data-count="words"></textarea>
 							</fieldset>
 							<fieldset id="experiments-fieldset" class="standard-input">
 								<legend class="required-label">What experiments, analyses, or testing activities are planned? (180 words)</legend>
 								<span class="sub-label">Describe how you intended to evaluate whether the approach would work.</span>
-								<textarea class="md-tb ml-16px" id="experiments-tb" data-maxlength="180"></textarea>
+								<textarea class="md-tb ml-16px" id="experiments-tb" data-maxlength="180" data-count="words"></textarea>
 							</fieldset>
 							<fieldset id="factors-fieldset" class="standard-input">
 								<legend class="required-label">What scientific or technical factors or variables will be evaluated? (180 words)</legend>
-								<textarea class="md-tb ml-16px" id="factors-tb" data-maxlength="180"></textarea>
+								<textarea class="md-tb ml-16px" id="factors-tb" data-maxlength="180" data-count="words"></textarea>
 							</fieldset>
 							<fieldset id="success-fieldset" class="standard-input">
 								<legend class="required-label">How will you know if you are successful? (180 words)</legend>
 								<span class="sub-label">Describe your success criteria.</span>
-								<textarea class="md-tb ml-16px" id="success-tb" data-maxlength="180"></textarea>
+								<textarea class="md-tb ml-16px" id="success-tb" data-maxlength="180" data-count="words"></textarea>
 							</fieldset>
 							<div class="btn-container">
 								<button class="btn btn-secondary back-button" type="button">Back</button>
