@@ -93,11 +93,11 @@
 							</ul>
 						</div><br>
 						<div class="group">
-							<input type="checkbox" id="certif-criteria" name="certif-criteria" value="accepted" data-toggle="">
+							<input type="checkbox" id="certif-criteria" name="certif-criteria" data-toggle="">
 	                		<label for="certif-criteria" data-preserve="true">
 								I certify that I verified and meet all the 
 								<a href="#" class="external-link" target="_blank" rel="noopener">criteria for pre-claim approval<span class="material-icons external-icon">open_in_new</span></a>
-								for pre-claim approval. Upon receipt of your Pre-claim approval application CRA will verify these requirements and if your business does not meet the requirements your application may not be processed.  If you are unable to answer or unsure of your standing it is recommended that you 
+								 for pre-claim approval. Upon receipt of your Pre-claim approval application CRA will verify these requirements and if your business does not meet the requirements your application may not be processed.  If you are unable to answer or unsure of your standing it is recommended that you 
 								<a href="#" class="external-link" target="_blank" rel="noopener">contact the CRA for confirmation<span class="material-icons external-icon">open_in_new</span></a>
 								before you proceed.
 							</label>
@@ -122,11 +122,11 @@
 							<fieldset id="projecttitle-fieldset" class="standard-input">
 								<label class="required-label" for="projecttitle-field">Project title </a>
 								</label>
-								<input id="projecttitle-field" type="text" class="threequarter-width ml-16px">
+								<input id="projecttitle-field" name="projecttitle" type="text" class="threequarter-width ml-16px" required>
 							</fieldset>
 
 								<fieldset id="startDate-fieldset" class="ml-16px floating-input threequarter-width">
-									<input class="" type="text" id="startDate" name="startDate" placeholder=" ">
+									<input class="" type="text" id="startDate" name="startDate" placeholder=" " required>
 									<label for="startDate" class="required-label">Anticipated project start date</label>
 									<div class="suffix"> <span class="material-icons">calendar_month</span> </div>
 									<div class="datepicker-modal hidden"></div>
@@ -134,7 +134,7 @@
 								<fieldset id="projectLength-fieldset" class="standard-input" data-radio-group>
 									<legend class="required-label">How long will your project last?</legend>
 									<div class="group">
-										<input type="radio" id="projectLength-less1y" name="projectLength" value="1 year or less" data-toggle="">
+										<input type="radio" id="projectLength-less1y" name="projectLength" value="1 year or less" data-toggle="" required>
 										<label for="projectLength-less1y"></label>
 									</div>
 									<div class="group">
@@ -155,19 +155,19 @@
 								</div>
 								<fieldset id="fieldofR-fieldset" class="standard-input">
 									 <label class="required-label" for="fieldofR-field">Select the field of research for your project </label>                        
-									<select id="fieldofR-field" name="fieldofR-field">
+									<select id="fieldofR-field" name="fieldofR-field" required>
 										<option value="" selected>(Select)</option>
 									</select>
 								</fieldset>
 								<fieldset id="catofSci-fieldset" class="standard-input">
 									 <label class="required-label" for="catofSci-field">Select the category of science or technology for your project   </label>                        
-									<select id="catofSci-field" name="catofSci-field">
+									<select id="catofSci-field" name="catofSci-field" required>
 										<option value="" selected>(Select)</option>
 									</select>
 								</fieldset>
 								<fieldset id="fieldofSci-fieldset" class="standard-input">
 									 <label class="required-label" for="fieldofSci-field">Select the field of science or technology for your project </label>                        
-									<select id="fieldofSci-field" name="fieldofSci-field">
+									<select id="fieldofSci-field" name="fieldofSci-field" required>
 										<option value="" selected>(Select)</option>
 									</select>
 								</fieldset>
@@ -175,7 +175,7 @@
 									<label for="expenditure-field" class="required-label">Estimate the total SR&ED expenditures</label>
 									<div class="money-field">
 										<span class="money-prefix">$</span>
-										<input class="" type="decimal" id="expenditure-field" name="expenditure" placeholder="0.00">
+										<input class="" type="decimal" id="expenditure-field" name="expenditure" placeholder="0.00" required>
 									</div>
 								</fieldset>
 							
@@ -183,8 +183,9 @@
 				
 					</div>
 					<div class="btn-container">
-						<button class="btn btn-secondary back-button" type="button">Back</button>
+						<button class="btn btn-tertiary back-button" type="button">Back</button>
 						<button class="btn btn-primary next-button" type="button">Next</button>
+						<button class="btn btn-secondary save-exit-button" type="button"><span class="material-icons">save</span>Save and exit</button>
 						<button class="hidden btn btn-primary out-button" type="button" onclick="location.href='chooser.html'">Return to Canada.ca</button>
 					</div>
 					</form>
@@ -211,12 +212,13 @@
 										<li>Describe what would be the really cool thing that you figured out that no one else has or knows.</li>
 										</ol>
 								</span>
-								<textarea class="lg-textarea ml-16px" id="uncertainty-tb" data-maxlength="500" data-count="words"></textarea>
+								<textarea class="lg-textarea ml-16px" id="uncertainty-tb" name="uncertainty" data-maxlength="500" data-count="words" required></textarea>
 							</fieldset>
 							
 							<div class="btn-container">
-								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-tertiary back-button" type="button">Back</button>
 								<button class="btn btn-primary next-button" type="button">Next</button>
+								<button class="btn btn-secondary save-exit-button" type="button"><span class="material-icons">save</span>Save and exit</button>
 							</div>
 						</form>
 					
@@ -244,11 +246,12 @@
 										<li>A description of any initial evaluations or testing that have been done.</li>
 										</ol>
 								</span>
-								<textarea class="lg-textarea ml-16px" id="duedilligence-tb" data-maxlength="700" data-count="words"></textarea>
+								<textarea class="lg-textarea ml-16px" id="duedilligence-tb" name="duedilligence" data-maxlength="700" data-count="words" required></textarea>
 							</fieldset>
 							<div class="btn-container">
-								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-tertiary back-button" type="button">Back</button>
 								<button class="btn btn-primary next-button" type="button">Next</button>
+								<button class="btn btn-secondary save-exit-button" type="button"><span class="material-icons">save</span>Save and exit</button>
 							</div>
 						</form>
 					</div>
@@ -266,30 +269,31 @@
 							<fieldset id="hypothesis-fieldset" class="standard-input">
 								<legend class="required-label">What is your hypothesis? (180 words)</legend>
 								
-								<textarea class="md-tb ml-16px" id="hypothesis-tb" data-maxlength="180" data-count="words"></textarea>
+								<textarea class="md-tb ml-16px" id="hypothesis-tb" name="hypothesis" data-maxlength="180" data-count="words" required></textarea>
 							</fieldset>
 							<fieldset id="solutions-fieldset" class="standard-input">
 								<legend class="required-label">What approaches or solutions do you plan to investigate? (180 words)</legend>
 								
-								<textarea class="md-tb ml-16px" id="solutions-tb" data-maxlength="180" data-count="words"></textarea>
+								<textarea class="md-tb ml-16px" id="solutions-tb" name="solutions" data-maxlength="180" data-count="words" required></textarea>
 							</fieldset>
 							<fieldset id="experiments-fieldset" class="standard-input">
 								<legend class="required-label">What experiments, analyses, or testing activities are planned? (180 words)</legend>
 								<span class="sub-label">Describe how you intended to evaluate whether the approach would work.</span>
-								<textarea class="md-tb ml-16px" id="experiments-tb" data-maxlength="180" data-count="words"></textarea>
+								<textarea class="md-tb ml-16px" id="experiments-tb" name="experiments" data-maxlength="180" data-count="words" required></textarea>
 							</fieldset>
 							<fieldset id="factors-fieldset" class="standard-input">
 								<legend class="required-label">What scientific or technical factors or variables will be evaluated? (180 words)</legend>
-								<textarea class="md-tb ml-16px" id="factors-tb" data-maxlength="180" data-count="words"></textarea>
+								<textarea class="md-tb ml-16px" id="factors-tb" name="factors" data-maxlength="180" data-count="words" required></textarea>
 							</fieldset>
 							<fieldset id="success-fieldset" class="standard-input">
 								<legend class="required-label">How will you know if you are successful? (180 words)</legend>
 								<span class="sub-label">Describe your success criteria.</span>
-								<textarea class="md-tb ml-16px" id="success-tb" data-maxlength="180" data-count="words"></textarea>
+								<textarea class="md-tb ml-16px" id="success-tb" name="success" data-maxlength="180" data-count="words" required></textarea>
 							</fieldset>
 							<div class="btn-container">
-								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-tertiary back-button" type="button">Back</button>
 								<button class="btn btn-primary next-button" type="button">Next</button>
+								<button class="btn btn-secondary save-exit-button" type="button"><span class="material-icons">save</span>Save and exit</button>
 							</div>
 						</form>
 					</div>
@@ -378,8 +382,9 @@
 						</table>
 
 							<div class="btn-container">
-								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-tertiary back-button" type="button">Back</button>
 								<button class="btn btn-primary next-button" type="button">Next</button>
+								<button class="btn btn-secondary save-exit-button" type="button"><span class="material-icons">save</span>Save and exit</button>
 							</div>
 						</form>
 						<div class="lightbox-container" id="uploaddoc-lightbox">
@@ -434,12 +439,13 @@
 							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
 							   <div id="review-container"></div>
 	<div class="group">
-							<input type="checkbox" id="certif-complete" name="certif-complete" value="I certify that I have examined the information provided in the form and in the attachments and to the best of my knowledge it is true, correct and complete." data-toggle="">
-											<label for="certif-criteria"></label>
+							<input type="checkbox" id="certif-complete" name="certif-complete" value="I certify that I have examined the information provided in the form and in the attachments and to the best of my knowledge it is true, correct and complete." data-toggle="" required>
+										<label for="certif-complete"></label>
 										</div>
 							   <div class="btn-container">
-								<button class="btn btn-secondary back-button" type="button">Back</button>
+								<button class="btn btn-tertiary back-button" type="button">Back</button>
 								<button class="btn btn-primary next-button" type="button">Complete project</button>
+								<button class="btn btn-secondary save-exit-button" type="button"><span class="material-icons">save</span>Save and exit</button>
 							</div>
 						</form>
 					</div>

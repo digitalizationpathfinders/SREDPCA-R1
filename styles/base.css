@@ -370,6 +370,9 @@ button {
 .btn-secondary:hover{
   background-color:rgb(234, 235, 237);
 }
+.save-exit-button .material-icons {
+  margin-right: 6px;
+}
 .btn-tertiary {
   background-color:transparent ;
   border:none;
@@ -1422,16 +1425,15 @@ textarea.limit-reached, input.limit-reached {
 .external-link {
   color: #284162;
   text-decoration: underline;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  margin-right: 0.3em;
 }
 .external-link:hover {
   color: #0535d2;
 }
 .external-icon {
   font-size: 14px !important;
-  vertical-align: middle;
+  display: inline-block;
+  vertical-align: -0.16em;
 }
 
 

@@ -193,6 +193,22 @@ class Stepper {
             }
             
         }
+
+        if (stepNum === 5) {
+            const currentDocuments = this.stepHandlers[5]?.documentsTable?.rows || [];
+            const savedDocuments = Array.from(document.querySelectorAll('#pastsesh-upload-tb tbody tr'))
+                .filter(row => !row.classList.contains('no-docs-row') && row.cells.length >= 4)
+                .map(row => ({
+                    "s5-filename": row.cells[0].textContent.trim(),
+                    "s5-desc": row.cells[1].textContent.trim(),
+                    "s5-date": row.cells[2].textContent.trim(),
+                    "s5-size": row.cells[3].textContent.trim()
+                }));
+            dataObj.documents = currentDocuments.map(document => ({
+                ...document,
+                "s5-date": document["s5-date"] || ""
+            })).concat(savedDocuments);
+        }
     
             
 
@@ -232,12 +248,12 @@ class Stepper {
                 case 3:
                     this.stepHandlers[stepNum] = new Step3Handler(this);
                     break;
-                case 4:
-                    this.stepHandlers[stepNum] = new Step4Handler(this);
-                    break;
                 case 5:
                 this.stepHandlers[stepNum] = new Step5Handler(this);
                 break;
+                case 6:
+                    this.stepHandlers[stepNum] = new Step4Handler(this);
+                    break;
 
             }
         }
@@ -316,29 +332,62 @@ class Step4Handler {
             },
             {
                 stepNum: 2,
-                title: "Ties in Canada",
+                title: "Describe the problem or uncertainty",
                 storageKey: "stepData_2"
 
             },
              {
                 stepNum: 3,
-                title: "Ties in another country",
+                title: "Describe the existing knowledge",
                 storageKey: "stepData_3"
 
             }
+            ,{
+                stepNum: 4,
+                title: "Describe the planned work",
+                storageKey: "stepData_4"
+            },
+            {
+                stepNum: 5,
+                title: "Supporting documents",
+                storageKey: "stepData_5",
+                documents: true
+            }
         ];
-        steps.forEach(({ stepNum, title, storageKey, labels }) => {
+        steps.forEach(({ stepNum, title, storageKey, documents }) => {
             let data = DataManager.getData(storageKey);
             if (!data) return; 
 
             // Replace field names with question labels
             let formattedData = {};
             let subTableData = null; // Placeholder for subtable
+
+            if (documents) {
+                const rows = data.documents || [];
+                subTableData = {
+                    title: "Attached documents",
+                    headers: ["File name", "Description", "Date uploaded", "File size"],
+                    columns: ["s5-filename", "s5-desc", "s5-date", "s5-size"],
+                    rows: rows.length > 0 ? rows : [{
+                        "s5-filename": "No supporting documents attached.",
+                        "s5-desc": "",
+                        "s5-date": "",
+                        "s5-size": ""
+                    }]
+                };
+            }
             
 
             Object.keys(data).forEach(key => {
+                if (key === "documents") return;
                 let value = data[key];
                 if (value == null) return;
+
+                if (key === "fieldofSci-field") {
+                    const selectedOption = Array.from(document.querySelectorAll("#fieldofSci-field option"))
+                        .find(option => option.value === value);
+                    value = selectedOption?.textContent || value;
+                }
 
             
                 // Use proper labels
@@ -395,8 +444,15 @@ class Step4Handler {
     getLabelForInput(name) {
         let label = "";
 
+        const namedInput = document.querySelector(`[name="${name}"]`);
+        const inputFieldset = namedInput?.closest("fieldset");
+        const inputLegend = inputFieldset?.querySelector("legend");
+        if (inputLegend) {
+            label = inputLegend.textContent.trim();
+        }
+
         // Handle standard <label for="...">
-        const input = document.querySelector(`[name="${name}"]`);
+        const input = namedInput;
         if (input) {
             const labelElement = document.querySelector(`label[for="${input.id}"]`);
             if (labelElement) {
@@ -764,7 +820,6 @@ class PanelObj {
         // Generate sub-table dynamically if data is provided
         if (this.subTable && this.subTable.rows && this.subTable.rows.length > 0) {
             subTableHTML = `
-                <h5>${this.subTable.title || "Subtable"}</h5>
                 <table class="review-table" cellpadding="0" cellspacing="0">
                     <thead>
                         <tr>
@@ -1164,15 +1219,9 @@ class DatepickerObj {
             const cell = document.createElement("div");
             cell.classList.add("datepicker-cell");
             cell.textContent = year;
-
-            // Only enable if it's <= current year
-            cell.classList.add("clickable");
-            cell.onclick = () => this.handleYearClick(year);
-
+            cell.onclick = () => this.renderMonthView(year);
             grid.appendChild(cell);
         }
-        title.textContent = `${startYearAdjusted} - ${endYear}`;
-
 
         container.appendChild(grid);
         this.modal.appendChild(container);
@@ -1892,6 +1941,19 @@ function populateFieldsForCategory(parent, subcat) {
     });
 }
 
+function validateStepBeforeSave(step) {
+    if (!step) return true;
+
+    const requiredFields = Array.from(step.querySelectorAll('[required]'))
+        .filter(field => field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)
+        .filter(field => field.offsetParent !== null);
+    const invalidField = requiredFields.find(field => !field.checkValidity());
+    if (!invalidField) return true;
+
+    invalidField.reportValidity();
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const navFrom = params.get('from');
@@ -1970,11 +2032,27 @@ document.addEventListener('DOMContentLoaded', () => {
             stepper.jumpStep(savedStepId);
         }
 
-        // Add event listeners to all next/back buttons within the stepper
+        // Handle step navigation and Save and exit from one delegated listener.
         stepperContainer.addEventListener('click', (event) => {
-            if (event.target.classList.contains('next-button')) {
+            const nextButton = event.target.closest('.next-button');
+            const backButton = event.target.closest('.back-button');
+            const saveExitButton = event.target.closest('.save-exit-button');
+            const currentIndex = stepper.steps.indexOf(stepper.activeStep);
+
+            if (saveExitButton) {
+                if (!validateStepBeforeSave(stepper.activeStep)) return;
+                stepper.storeData(currentIndex);
+                const pcaId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
+                const saved = saveCurrentProjectToPCA(false);
+                if (!saved) {
+                    alert('Could not save the project. Ensure you started this flow by clicking "Add a new project" from a PCA projects page.');
+                    return;
+                }
+                sessionStorage.setItem('navigatingToPcaProjects', 'true');
+                const query = pcaId ? `?pcaId=${encodeURIComponent(pcaId)}` : '';
+                window.location.href = `pca-projects.html${query}`;
+            } else if (nextButton) {
                 // If currently on the last step, finalize project and navigate to confirmation
-                const currentIndex = stepper.steps.indexOf(stepper.activeStep);
                 const lastIndex = stepper.steps.length - 1;
                 if (currentIndex === lastIndex) {
                     // Ensure last step data is stored
@@ -1993,7 +2071,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     stepper.navigateStep('next');
                 }
 
-            } else if (event.target.classList.contains('back-button')) {
+            } else if (backButton) {
                 stepper.navigateStep('back');
 
             }
@@ -2055,6 +2133,47 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        const editProjectId = params.get('editProjectId') || sessionStorage.getItem('editingProjectId');
+        if (editProjectId) {
+            const editPcaId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
+            const editPca = findPCAById(editPcaId);
+            const editProject = editPca?.projects?.find(project => project.id === editProjectId);
+            const saved = editProject?.data || {};
+            if (editProject) {
+                const fieldOfResearch = saved.fieldOfResearch || '';
+                const categoryOfScience = saved.categoryOfScience || '';
+                const fieldOfScience = saved.fieldOfScience || '';
+                if (fieldOfRSelect) fieldOfRSelect.value = fieldOfResearch;
+                populateCatForFieldOfResearch(fieldOfResearch);
+                if (catSelect) catSelect.value = categoryOfScience;
+                populateFieldsForCategory(fieldOfResearch, categoryOfScience);
+                const fieldOption = Array.from(fieldOfSciSelect?.options || [])
+                    .find(option => option.textContent === fieldOfScience || option.textContent.includes(fieldOfScience));
+
+                DataManager.saveData('stepData_1', {
+                    projecttitle: editProject.name || '',
+                    startDate: saved.startDate || '',
+                    projectLength: saved.projectLength || '',
+                    'fieldofR-field': fieldOfResearch,
+                    'catofSci-field': categoryOfScience,
+                    'fieldofSci-field': fieldOption?.value || fieldOfScience,
+                    expenditure: saved.expenditure || ''
+                });
+                DataManager.saveData('stepData_2', { uncertainty: saved.uncertainty || '' });
+                DataManager.saveData('stepData_3', { duedilligence: saved.duedilligence || '' });
+                DataManager.saveData('stepData_4', {
+                    hypothesis: saved.hypothesis || '',
+                    solutions: saved.solutions || '',
+                    experiments: saved.experiments || '',
+                    factors: saved.factors || '',
+                    success: saved.success || ''
+                });
+                DataManager.saveData('stepData_5', { documents: saved.documents || [] });
+                stepper.loadStoredData();
+                stepper.setActive(stepper.steps[1]);
+            }
+        }
+
 
         //Accordion functionality
         const accordions = document.querySelectorAll('.accordion');
@@ -2070,20 +2189,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('beforeunload', (event) => {
     const navigatingToConfirmation = sessionStorage.getItem("navigatingToConfirmation");
-const navigatingToStepper = sessionStorage.getItem("navigatingToStepper");
+    const navigatingToStepper = sessionStorage.getItem("navigatingToStepper");
+    const navigatingToPcaProjects = sessionStorage.getItem("navigatingToPcaProjects");
 
-if (!navigatingToConfirmation && !navigatingToStepper) {
+    if (!navigatingToConfirmation && !navigatingToStepper && !navigatingToPcaProjects) {
    
         // Clear transient session data
         sessionStorage.clear();
-        // Remove any task-scoped PCA lists so refresh/back-to-chooser resets to default
-        Object.keys(localStorage).forEach(key => {
-            if (key && key.indexOf('pca_list_task_') === 0) {
-                localStorage.removeItem(key);
-            }
-        });
     }
     sessionStorage.removeItem("navigatingToConfirmation"); // Reset flag after navigation
+    sessionStorage.removeItem("navigatingToPcaProjects");
 });
 
 /* PCA overview & projects pages logic */
@@ -2105,77 +2220,24 @@ function escapeHtml(str) {
 }
 
 function _pcaStorageKey() {
-    const taskNum = sessionStorage.getItem('taskNum') || 'default';
+    const taskNum = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum') || 'default';
     return `pca_list_task_${taskNum}`;
 }
 
 function getPCAs() {
-    return JSON.parse(localStorage.getItem(_pcaStorageKey()) || '[]');
+    try {
+        const stored = localStorage.getItem(_pcaStorageKey());
+        if (stored) return JSON.parse(stored);
+
+        const task = JSON.parse(sessionStorage.getItem('selectedTask') || localStorage.getItem('selectedTask') || '{}');
+        return Array.isArray(task.pcaList) ? task.pcaList : [];
+    } catch (e) {
+        return [];
+    }
 }
 
 function savePCAs(list) {
     localStorage.setItem(_pcaStorageKey(), JSON.stringify(list));
-}
-
-// Ensure a PCA has two demo projects prepopulated (only once per PCA)
-function _ensureDemoProjectsForPCA(list, pcaId) {
-    if (!Array.isArray(list) || !pcaId) return false;
-    const pca = list.find(p => p.id === pcaId) || list[0];
-    if (!pca) return false;
-    const flagKey = `pca_demo_populated_${pca.id}`;
-    if (localStorage.getItem(flagKey) === 'true') return false;
-
-    pca.projects = pca.projects || [];
-    const now = new Date().toISOString();
-
-    const demo = [
-        {
-            id: _generateId('proj'),
-            name: 'Research Project A',
-            status: 'Complete',
-            created: now,
-            lastModified: now,
-            data: {
-                startDate: '2024-01-01',
-                projectLength: '3 months',
-                fieldOfResearch: 'Natural and formal sciences',
-                categoryOfScience: 'Natural and formal sciences',
-                fieldOfScience: 'Biological sciences',
-                expenditure: '10,000',
-                uncertainty: 'Proof-of-concept required',
-            }
-        },
-        {
-            id: _generateId('proj'),
-            name: 'Research Project B',
-            status: 'Complete',
-            created: now,
-            lastModified: now,
-            data: {
-                startDate: '2024-03-15',
-                projectLength: '6 months',
-                fieldOfResearch: 'Engineering and technology',
-                categoryOfScience: 'Engineering and technology',
-                fieldOfScience: 'Electrical engineering',
-                expenditure: '25,000',
-                uncertainty: 'Prototype performance unknown',
-            }
-        }
-    ];
-
-    // Only add demo projects up to two and do not exceed 3 total
-    while (pca.projects.length < 2 && pca.projects.length < 3) {
-        pca.projects.push(demo[pca.projects.length] || demo[1]);
-    }
-
-    pca.lastModified = now;
-    try {
-        localStorage.setItem(flagKey, 'true');
-        savePCAs(list);
-    } catch (e) {
-        console.warn('Failed to persist demo projects flag', e);
-    }
-    return true;
 }
 
 // find a PCA by id across all task lists as a fallback
@@ -2228,41 +2290,12 @@ function initPCAOverview() {
             } catch (e) { /* ignore */ }
         }
         tableObj.rows = [];
-        // Ensure demo projects exist for the current PCA (only once)
-        try {
-            const current = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
-            if (list && list.length > 0) _ensureDemoProjectsForPCA(list, current || (list[0] && list[0].id));
-        } catch (e) {
-            console.warn('Demo project injection failed', e);
-        }
-        // Fallback: if currentPCA exists but wasn't present in the task-scoped list,
-        // search all task-scoped keys and inject demo projects where the PCA is stored.
-        try {
-            const currentId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
-            if (currentId) {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!key || !key.startsWith('pca_list_task_')) continue;
-                    try {
-                        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-                        const found = arr.find(p => p.id === currentId);
-                        if (found) {
-                            const changed = _ensureDemoProjectsForPCA(arr, currentId);
-                            if (changed) {
-                                localStorage.setItem(key, JSON.stringify(arr));
-                            }
-                        }
-                    } catch (e) { /* ignore parse errors */ }
-                }
-            }
-        } catch (e) { console.warn('Demo injection fallback failed', e); }
         if (list.length === 0) {
             tableObj.tbody.innerHTML = `<tr><td colspan="5">You have not created any PCAs.</td></tr>`;
             return;
         }
         list.forEach(pca => {
-            const linkTaskNum = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum') || '';
-            const nameHtml = `<a href="pca-projects.html?pcaId=${encodeURIComponent(pca.id)}&taskNum=${encodeURIComponent(linkTaskNum)}" class="open-pca" data-id="${pca.id}">${escapeHtml(pca.name||'Untitled PCA')}</a>`;
+            const nameHtml = `<a href="pca-projects.html" class="open-pca" data-id="${pca.id}">${escapeHtml(pca.name||'Untitled PCA')}</a>`;
             const actionsHtml = `
                 <a href="#" class="action-link edit-pca" data-id="${pca.id}" title="Edit"><span class="material-icons">edit</span> <span class="action-text">Edit</span></a>
                 <a href="#" class="action-link delete-pca" data-id="${pca.id}" title="Delete"><span class="material-icons">close</span> <span class="action-text">Delete</span></a>
@@ -2358,10 +2391,7 @@ function initPCAOverview() {
             }
             // clear adding flags
             sessionStorage.removeItem('addingProject');
-            // navigate to projects page including pcaId and taskNum to ensure correct context
-            const taskNumParam = sessionStorage.getItem('taskNum') || localStorage.getItem('taskNum') || '';
-            const query = new URLSearchParams({ pcaId: id, taskNum: taskNumParam }).toString();
-            window.location.href = `pca-projects.html?${query}`;
+            window.location.href = 'pca-projects.html';
             return;
         }
         const editBtn = e.target.closest('.edit-pca');
@@ -2505,27 +2535,6 @@ function initPCAProjects() {
             // create a minimal PCA-like object for display
             pca = { id: pcaIdFallback, name: fallbackName, projects: [] };
         }
-        // Ensure demo projects exist for this PCA (only once)
-        try { _ensureDemoProjectsForPCA(list, pcaId); } catch (e) { console.warn('Demo injection failed in projects page', e); }
-        // Also ensure across all task keys if currentPCA is stored elsewhere
-        try {
-            const currentId = sessionStorage.getItem('currentPCA') || localStorage.getItem('currentPCA');
-            if (currentId) {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!key || !key.startsWith('pca_list_task_')) continue;
-                    try {
-                        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-                        const found = arr.find(p => p.id === currentId);
-                        if (found) {
-                            const changed = _ensureDemoProjectsForPCA(arr, currentId);
-                            if (changed) localStorage.setItem(key, JSON.stringify(arr));
-                        }
-                    } catch (e) {}
-                }
-            }
-        } catch (e) { console.warn('Demo injection fallback failed in projects page', e); }
-        titleEl.textContent = 'Pre-claim approval (PCA)';
         // persist current PCA to session/local for downstream flows
         try {
             if (pca && pca.id) {
@@ -2563,8 +2572,8 @@ function initPCAProjects() {
             tdStatus.textContent = proj.status || 'In progress';
             const tdAction = document.createElement('td');
             tdAction.innerHTML = `
-                <button class="btn-tertiary edit-project" data-index="${idx}" title="Edit"><span class="material-icons">edit</span></button>
-                <button class="btn-tertiary delete-project" data-index="${idx}" title="Delete"><span class="material-icons">close</span></button>
+                <button class="btn-tertiary edit-project" data-index="${idx}" title="Edit"><span class="material-icons">edit</span>Edit</button>
+                <button class="btn-tertiary delete-project" data-index="${idx}" title="Delete"><span class="material-icons">close</span>Delete</button>
             `;
             tr.appendChild(tdName);
             tr.appendChild(tdStatus);
@@ -2621,17 +2630,16 @@ function initPCAProjects() {
         const delBtn = e.target.closest('.delete-project');
         if (editBtn) {
             const idx = parseInt(editBtn.dataset.index, 10);
-            // Optionally open a project edit flow — for now prompt
             const list = getPCAs();
             const pca = list.find(p => p.id === pcaId);
             const proj = pca.projects[idx];
-            const newName = prompt('Edit project name', proj.name || '');
-            if (newName !== null) {
-                proj.name = newName.trim() || proj.name;
-                pca.lastModified = new Date().toISOString();
-                savePCAs(list);
-                load();
-            }
+            if (!proj) return;
+            sessionStorage.setItem('currentPCA', pcaId);
+            sessionStorage.setItem('addingProject', 'true');
+            sessionStorage.setItem('editingProjectId', proj.id);
+            sessionStorage.setItem('navigatingToStepper', 'true');
+            try { localStorage.setItem('allowStepper', Date.now().toString()); } catch (e) {}
+            window.location.href = `index.html?from=pca&editProjectId=${encodeURIComponent(proj.id)}`;
             return;
         }
         if (delBtn) {
@@ -2698,11 +2706,12 @@ function saveCurrentProjectToPCA(markComplete = true) {
 
     // Build project object from current form fields
     const now = new Date().toISOString();
+    const editingProjectId = sessionStorage.getItem('editingProjectId');
     const proj = {
-        id: _generateId('proj'),
+        id: editingProjectId || _generateId('proj'),
         name: (document.getElementById('projecttitle-field')?.value || '').trim() || 'Untitled project',
-        status: markComplete ? 'Complete' : 'In progress',
-        created: now,
+        status: markComplete ? 'Complete' : (pca.projects.find(project => project.id === editingProjectId)?.status || 'In progress'),
+        created: pca.projects.find(project => project.id === editingProjectId)?.created || now,
         lastModified: now,
         data: {
             startDate: document.getElementById('startDate')?.value || '',
@@ -2717,23 +2726,30 @@ function saveCurrentProjectToPCA(markComplete = true) {
             solutions: document.getElementById('solutions-tb')?.value || '',
             experiments: document.getElementById('experiments-tb')?.value || '',
             factors: document.getElementById('factors-tb')?.value || '',
-            success: document.getElementById('success-tb')?.value || ''
+            success: document.getElementById('success-tb')?.value || '',
+            documents: DataManager.getData('stepData_5')?.documents || []
         }
     };
 
     pca.projects = pca.projects || [];
-    if (pca.projects.length >= 3) {
+    const existingProject = pca.projects.find(project => project.id === editingProjectId);
+    if (!existingProject && pca.projects.length >= 3) {
         alert('This PCA already has the maximum of 3 projects.');
         return false;
     }
 
-    pca.projects.push(proj);
+    if (existingProject) {
+        Object.assign(existingProject, proj);
+    } else {
+        pca.projects.push(proj);
+    }
     pca.lastModified = now;
     savePCAs(list);
 
     // Clear adding flags
     sessionStorage.removeItem('addingProject');
     sessionStorage.removeItem('currentPCA');
+    sessionStorage.removeItem('editingProjectId');
 
     return true;
 }

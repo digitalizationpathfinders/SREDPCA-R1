@@ -29,7 +29,7 @@
 
 
     <script>
-        // When showing the chooser, clear any transient session data and task PCAs
+        // A new task selection starts with a clean session and task-scoped PCA lists.
         document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.clear();
             Object.keys(localStorage).forEach(key => {
@@ -95,36 +95,22 @@
                 }
             };
 
-            // Store the selected task's data in sessionStorage
-            sessionStorage.setItem("selectedTask", JSON.stringify(tasks[taskNumber]));
-            sessionStorage.setItem("taskNum", taskNumber);
-            // Also persist a copy to localStorage as a fallback for navigation between file:// pages
-            try {
-                localStorage.setItem("selectedTask", JSON.stringify(tasks[taskNumber]));
-                localStorage.setItem("taskNum", String(taskNumber));
-            } catch (e) {
-                // ignore storage errors
-            }
-
-            // Initialize task-scoped PCA list in localStorage. If task data provides a pcaList, use it; otherwise start empty.
+            const task = tasks[taskNumber];
+            const taskJson = JSON.stringify(task);
             const pcaKey = `pca_list_task_${taskNumber}`;
-            if (tasks[taskNumber].pcaList) {
-                localStorage.setItem(pcaKey, JSON.stringify(tasks[taskNumber].pcaList));
-            } else if (!localStorage.getItem(pcaKey)) {
-                // ensure empty by default
-                localStorage.setItem(pcaKey, JSON.stringify([]));
-            }
+            const pcaList = task.pcaList || [];
 
-            // Redirect to PCA overview page (will focus the Start button)
-            sessionStorage.setItem('autoStartPCA','true');
+            // Session is the primary handoff; localStorage keeps file:// navigation reliable.
+            sessionStorage.setItem('selectedTask', taskJson);
+            sessionStorage.setItem('taskNum', String(taskNumber));
+            sessionStorage.setItem('pcaList', JSON.stringify(pcaList));
+            localStorage.setItem('selectedTask', taskJson);
+            localStorage.setItem('taskNum', String(taskNumber));
+            localStorage.setItem(pcaKey, JSON.stringify(pcaList));
+
             window.location.href = "pca-overview.html";
         }
     </script>
 </body>
 </html>
 
-                 
-        
-    </script>
-</body>
-</html>
