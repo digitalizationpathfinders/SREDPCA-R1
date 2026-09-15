@@ -36,46 +36,41 @@
             <div class="small-h1">Scientific Research & Experimental Development (SR&ED)</div>
 
             <h1>Pre-claim approval (PCA) - project confirmation </h1>
-            This project has been marked as complete in the PCA project list.   
+            <p>This project has been marked as complete in the PCA project list.   
 
-            <h6>Next steps</h6>
-            If you have another project to add, edit, or complete, go to the PCA project list        
-            <br><button class="btn btn-secondary ml-16px" type="button">Go to PCA project list</button>
-            <h6>Are you ready to submit? </h6>            
-            If you are ready to submit this PCA, go to the PCA overview page<br>
-            <button class="btn btn-primary ml16px" type="button">Go to PCA overview</button>
+            <h4>Next steps</h4>
+            <p>If you have another project to add, edit, or complete, go to the PCA project list        
+            </p><button id="go-to-pca-projects" class="btn btn-secondary ml-16px" type="button">Go to PCA project list</button>
+            <h4>Are you ready to submit? </h4>            
+            <p>If you are ready to submit this PCA, go to the PCA overview page
+            </p><button id="go-to-pca-overview" class="btn btn-primary ml-16px" type="button">Go to PCA overview</button>
         </div>
     </body>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let taskData = sessionStorage.getItem("selectedTask");
-            console.log(taskData)
 
             if (!taskData) {
                 // If user somehow lands here without choosing a task, redirect them back
                 window.location.href = "chooser.html";
             } else {
                 taskData = JSON.parse(taskData);
-                console.log("Loaded Task Data:", taskData);
-
-
-                if (taskData.racUserName) {
-                    document.getElementById("task-rep-name").textContent = taskData.racUserName;   
-                }
-                else {
-                    document.getElementById("task-rep-name").textContent = "REPRESENTATIVE NAME";
-                }
-
-                if (taskData.deceasedInfo && taskData.deceasedInfo.name) {
-                    document.getElementById("task-accountuser-name").textContent = taskData.deceasedInfo.name;
-                }
+                const accountName = document.getElementById("task-account-name");
+                const accountBn9 = document.getElementById("task-account-bn9");
+                if (accountName) accountName.textContent = taskData.accountInfo?.businessName || "";
+                if (accountBn9) accountBn9.textContent = taskData.bn9 || "";
             }
+
+            const pcaId = sessionStorage.getItem("confirmationPcaId") || localStorage.getItem("currentPCA");
+            document.getElementById("go-to-pca-projects")?.addEventListener("click", () => {
+                const query = pcaId ? `?pcaId=${encodeURIComponent(pcaId)}` : "";
+                window.location.href = `pca-projects.html${query}`;
+            });
+            document.getElementById("go-to-pca-overview")?.addEventListener("click", () => {
+                window.location.href = "pca-overview.html";
+            });
         });
-        function returnToOverview (){
-            window.location.href = "chooser.html";
-            sessionStorage.clear();
-        }
 
         </script>
         

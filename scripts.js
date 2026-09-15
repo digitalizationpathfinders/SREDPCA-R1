@@ -2746,6 +2746,10 @@ function saveCurrentProjectToPCA(markComplete = true) {
     pca.lastModified = now;
     savePCAs(list);
 
+    if (markComplete) {
+        sessionStorage.setItem('confirmationPcaId', currentPCA);
+    }
+
     // Clear adding flags
     sessionStorage.removeItem('addingProject');
     sessionStorage.removeItem('currentPCA');
