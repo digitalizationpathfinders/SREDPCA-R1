@@ -92,6 +92,8 @@
 								 <li>List of project team members, including potential or prospective project members and their respective areas of expertise and credentials.</li>
 							</ul>
 						</div><br>
+						<fieldset class="standard-input">
+							<legend class="required-label">Certification</legend>
 						<div class="group">
 							<input type="checkbox" id="certif-criteria" name="certif-criteria" data-toggle="">
 	                		<label for="certif-criteria" data-preserve="true">
@@ -102,6 +104,7 @@
 								before you proceed.
 							</label>
 						</div>
+						</fieldset>
 						<div class="btn-container">
 							<button class="btn btn-primary next-button" type="button">Begin</button>
 						</div>
@@ -115,7 +118,7 @@
 				<div class="step-content">
 					<div class="container">
 						<form id="step-1-form">
-							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required. </div>
 							<br>
 							<div id="accountinfo-panel-container">                         
                             </div>
@@ -199,7 +202,7 @@
 				<div class="step-content">
 					<div class="container">
 						<form id="step-2-form">
-							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required. </div>
 							<fieldset id="uncertainty-fieldset" class="standard-input">
 								<legend class="required-label">What scientific or technological uncertainty are you aiming to address? Include the objective of the project and describe the new scientific or technological knowledge, or the new or improved capability you are seeking (500 words) </legend>
 								<span class="sub-label">To answer this question you must include answers to following questions:
@@ -232,7 +235,7 @@
 				<div class="step-content">
 					<div class="container">
 						<form id="step-3-form">
-							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required. </div>
 						
 							<fieldset id="duedilligence-fieldset" class="standard-input">
 								<legend class="required-label">What due diligence have you completed to confirm that the scientific or technological uncertainty described in line 042 cannot be resolved using existing  scientific or technological knowledge, solutions or approaches? (Maximum 700 words)</legend>
@@ -264,7 +267,7 @@
 				<div class="step-content">
 					<div class="container">
 						<form id="step-4-form">
-							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required. </div>
 						
 							<fieldset id="hypothesis-fieldset" class="standard-input">
 								<legend class="required-label">What is your hypothesis? (180 words)</legend>
@@ -306,7 +309,7 @@
 				<div class="step-content">
 					<div class="container">
 						<form id="step-5-form">
-							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required. </div>
 							<br><button type="button" class="accordion">Documents you will need to attach</button>
 						<div class="accordion-content">
 							
@@ -337,8 +340,8 @@
 								 <li>List of project team members, including potential or prospective project members and their respective areas of expertise and credentials.</li>
 							</ul>
 						</div>
-							<fieldset id="currentsesh-fieldset" required>
-                            	<label for="currentsesh-upload-tb">Attach your supporting documents</label>
+							<fieldset id="currentsesh-fieldset" class="standard-input" required>
+                            	<label class="required-label"for="currentsesh-upload-tb">Attach your supporting documents</label>
                            		 <table id="currentsesh-upload-tb" class="table dynamic-table" cellpadding="0" cellspacing="0" required>
 									<thead>
 										<tr>
@@ -436,12 +439,14 @@
 				<div class="step-content">
 					<div class="container">
 						<form id="step-6-form">
-							<div class="required">Fields marked with asterisk ( <span class="ast">*</span>) are required. </div>
+							<div class="required">Fields marked with asterisk (<span class="ast">*</span>) are required. </div>
 							   <div id="review-container"></div>
+							   <fieldset class="standard-input">
+							<legend class="required-label">Certification</legend>
 	<div class="group">
 							<input type="checkbox" id="certif-complete" name="certif-complete" value="I certify that I have examined the information provided in the form and in the attachments and to the best of my knowledge it is true, correct and complete." data-toggle="" required>
 										<label for="certif-complete"></label>
-										</div>
+										</div></fieldset>
 							   <div class="btn-container">
 								<button class="btn btn-tertiary back-button" type="button">Back</button>
 								<button class="btn btn-primary next-button" type="button">Complete project</button>
