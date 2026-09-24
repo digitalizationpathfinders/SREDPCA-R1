@@ -490,7 +490,8 @@ class Step5Handler {
 
         this.browseFileButton = document.getElementById("s5-browsebtn");
         this.browseWindow = document.getElementById("s5-browsewind");
-        this.fileList = document.querySelectorAll('.file-item');
+        this.fileListContainer = document.getElementById("document-file-list");
+        this.fileList = [];
 
         this.fileNameDisplay = document.getElementById("s5-filename-display");
         this.hiddenFileInput = document.getElementById("s5-filename");
@@ -499,17 +500,12 @@ class Step5Handler {
 
         if(!this.browseFileButton) return; 
 
+        this.populateTaskDocumentList();
 
         this.browseFileButton.addEventListener("click", () => {
             this.browseWindow.classList.remove('hidden');
             //this.selectFile();
         });
-       this.fileList.forEach((file) => {
-            file.addEventListener('click', () =>{
-                this.selectFile(file);
-                this.browseWindow.classList.add('hidden');
-            });
-        }); 
 
         document.addEventListener("lightboxSubmitted", (event) => {
             if (event.detail.lightboxId === "uploaddoc-lightbox") {
@@ -532,9 +528,32 @@ class Step5Handler {
 
         this.calculateTotalFileSize();
     }
+
+    populateTaskDocumentList() {
+        const selectedTask = JSON.parse(sessionStorage.getItem("selectedTask") || localStorage.getItem("selectedTask") || "{}");
+        const documentOptions = selectedTask.supportingDocuments || [];
+
+        if (!this.fileListContainer) return;
+
+        this.fileListContainer.innerHTML = "";
+        this.fileList = [];
+
+        documentOptions.forEach((fileName) => {
+            const fileItem = document.createElement("li");
+            fileItem.className = "file-item";
+            fileItem.dataset.fileName = fileName;
+            fileItem.innerHTML = '<span class="material-icons file-icon">insert_drive_file</span>' + fileName;
+            fileItem.addEventListener("click", () => {
+                this.selectFile(fileItem);
+                this.browseWindow.classList.add("hidden");
+            });
+            this.fileListContainer.appendChild(fileItem);
+            this.fileList.push(fileItem);
+        });
+    }
+
     selectFile(file){
-        
-        let fileName = file.childNodes[1].nodeValue.trim();
+        const fileName = file.dataset.fileName || file.textContent.trim();
         this.fileNameDisplay.textContent = fileName;
         this.hiddenFileInput.value = fileName;
         const fakeSize = Math.floor(Math.random() * 450) + 50; // Generates 50-500 KB
